@@ -1,0 +1,9 @@
+# Machine-specific git identity. Copy to ~/.gitconfig.local (git-ignored).
+[user]
+	email = <your-email>
+	signingkey = ssh-ed25519 <your-public-key>
+
+# 1Password SSH signing agent. Path differs per OS.
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+	# Linux: program = /opt/1Password/op-ssh-sign

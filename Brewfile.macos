@@ -1,0 +1,4 @@
+# tui-ide: macOS-only casks.
+# iTerm2 is intentionally omitted: it is already installed manually and the
+# cask would fight that install. Install or update it from the app.
+cask "font-meslo-lg-nerd-font"
