@@ -14,7 +14,7 @@ This is a complete stack:
 ## What It Installs
 
 Toolchain via Homebrew (macOS and Linuxbrew): git, gh, neovim, mosh, herdr,
-opencode, ripgrep, stow, jq.
+opencode, ripgrep, stow, jq, lazygit.
 
 macOS casks: Meslo LGS Nerd Font. iTerm2 is installed manually.
 
@@ -71,7 +71,6 @@ dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`.
 
 ## Manual Steps (Not Automated)
 
-- iTerm2 GUI preferences: custom folder, font, warm-burnout, Shift+Enter.
 - Tailscale: install and join the tailnet (cask on macOS, apt repo on Linux).
 - 1Password CLI (`op`) sign-in.
 
@@ -88,4 +87,5 @@ nvim --headless "+lua print('ok')" +q
 herdr --version
 mosh --version
 stow --version
+lazygit --version
 ```

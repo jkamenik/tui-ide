@@ -20,7 +20,7 @@ if have brew; then
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update
-  sudo apt-get install -y git curl mosh ripgrep stow
+  sudo apt-get install -y git curl mosh ripgrep stow jq lazygit
 else
   echo "Need Homebrew or apt-get. Install Homebrew first: https://brew.sh" >&2
   exit 1

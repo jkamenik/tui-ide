@@ -10,6 +10,8 @@ return {
         { "<leader>fb", desc = "Find buffers" },
         { "<leader>ff", desc = "Find files" },
         { "<leader>fg", desc = "Live grep" },
+        { "<leader>g", group = "git" },
+        { "<leader>gg", desc = "LazyGit" },
         { "<leader>p", desc = "Command palette" },
       },
     },

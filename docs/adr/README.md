@@ -17,6 +17,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0008](0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted | 2026-09-16 |
 | [0009](0009-track-iterm2-preferences.md) | Track iTerm2 preferences from a synced plist | Superseded | 2026-09-16 |
 | [0010](0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted | 2026-09-16 |
+| [0011](0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted | 2026-09-16 |
 
 ## Format
 

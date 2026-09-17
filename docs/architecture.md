@@ -25,7 +25,7 @@ flowchart TB
         Shell["zsh + oh-my-zsh"]
         Mux["herdr"]
         Edit["Neovim"]
-        Tools["mosh, git, gh, opencode, ripgrep"]
+        Tools["mosh, git, gh, opencode, ripgrep, lazygit"]
     end
 
     subgraph Remote["Always-on host - automations repo"]
@@ -57,6 +57,7 @@ flowchart TB
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
+| LazyGit | Git client | TUI launched from Neovim with `<leader>gg` |
 
 ## Cross-Machine Model
 
@@ -104,3 +105,4 @@ Current accepted ADRs. Superseded records are omitted.
 | [0007](adr/0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted |
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
 | [0010](adr/0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted |
+| [0011](adr/0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted |
