@@ -18,6 +18,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0009](0009-track-iterm2-preferences.md) | Track iTerm2 preferences from a synced plist | Superseded | 2026-09-16 |
 | [0010](0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted | 2026-09-16 |
 | [0011](0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted | 2026-09-16 |
+| [0012](0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted | 2026-09-17 |
 
 ## Format
 

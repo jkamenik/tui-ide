@@ -58,6 +58,8 @@ flowchart TB
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
 | LazyGit | Git client | TUI launched from Neovim with `<leader>gg` |
+| render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
+| obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled |
 
 ## Cross-Machine Model
 
@@ -106,3 +108,4 @@ Current accepted ADRs. Superseded records are omitted.
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
 | [0010](adr/0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted |
 | [0011](adr/0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted |
+| [0012](adr/0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted |

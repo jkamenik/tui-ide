@@ -46,6 +46,14 @@ cp dotfiles/git/.gitconfig.local.example ~/.gitconfig.local
 # edit email, signing key, and the 1Password agent path
 ```
 
+For the Obsidian vault workspace, copy the nvim overlay:
+
+```bash
+cp dotfiles/nvim/.config/nvim/lua/obsidian-local.example.lua \
+  ~/.config/nvim/lua/obsidian-local.lua
+# edit the vault path (e.g. ~/github.com/jkamenik/second-brain)
+```
+
 Then finish the iTerm2 setup:
 
 ### iTerm2 (one-time, macOS)
