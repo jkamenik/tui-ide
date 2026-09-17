@@ -1,18 +1,31 @@
 # iTerm2
 
-iTerm2 stores its profile in `~/.config/iterm2/AppSupport` when the custom
-preferences folder is enabled. That folder is currently empty, so the profile
-still lives in the default location.
+The iTerm2 profile is tracked as a snapshot at
+`iterm2/com.googlecode.iterm2.plist`. iTerm2 loads preferences from
+`~/.config/iterm2/AppSupport` when the custom preferences folder is enabled;
+`install.sh` seeds that file from the snapshot on a fresh macOS machine.
 
 ## One-time GUI setup
 
 1. iTerm2 > Settings > General > Preferences.
 2. Check "Load preferences from a custom folder or URL".
 3. Point it at `~/.config/iterm2/AppSupport`.
-4. iTerm2 writes `com.googlecode.iterm2.plist` there. Commit that file.
 
-Once the custom folder is live, this repo owns the profile and a fresh machine
-can be seeded by copying the plist into place before first launch.
+Once the custom folder is live, iTerm2 writes the plist there and this repo owns
+the profile.
+
+## Syncing changes
+
+The custom folder is the source of truth while you use the GUI. After changing
+settings, copy the plist back into the repo and commit it:
+
+```bash
+cp ~/.config/iterm2/AppSupport/com.googlecode.iterm2.plist \
+  iterm2/com.googlecode.iterm2.plist
+```
+
+On a fresh machine, the snapshot is seeded automatically by `install.sh` (only
+when the plist is absent), then enable the custom folder above.
 
 ## Required settings for this stack
 

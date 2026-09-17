@@ -20,6 +20,9 @@ macOS casks: Meslo LGS Nerd Font. iTerm2 is installed manually.
 
 Dotfiles via GNU Stow: zsh, git, nvim, herdr.
 
+iTerm2 preferences are tracked as a plist snapshot in `iterm2/` and seeded on
+macOS by `install.sh`.
+
 ## Install
 
 ```bash
@@ -42,7 +45,8 @@ cp dotfiles/git/.gitconfig.local.example ~/.gitconfig.local
 # edit email, signing key, and the 1Password agent path
 ```
 
-Then finish the iTerm2 setup in `iterm2/README.md`.
+Then finish the iTerm2 setup in `iterm2/README.md`: enable the custom
+preferences folder so the tracked profile applies, and sync GUI changes back.
 
 ## Manual Steps (Not Automated)
 

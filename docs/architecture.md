@@ -49,7 +49,7 @@ flowchart TB
 
 | Component | Role | Notes |
 |-----------|------|-------|
-| iTerm2 | macOS terminal | Clickable custom URL schemes (obsidian://, onepassword://) |
+| iTerm2 | macOS terminal | Clickable custom URL schemes (obsidian://, onepassword://); prefs tracked as a plist snapshot |
 | Moshi | iOS terminal | Mosh-native, herdr-integrated; Blink is the fallback |
 | zsh + oh-my-zsh | Shell | Portable across macOS and Linux |
 | herdr | Multiplexer | Server-side sessions; narrow-screen TUI for mobile |
@@ -69,6 +69,10 @@ flowchart TB
   holds identity and the 1Password SSH signing agent path.
 - **Secrets:** the 1Password CLI (`op`) provides credentials. No secret is ever
   committed.
+- **iTerm2 (macOS):** a snapshot of `com.googlecode.iterm2.plist` lives in
+  `iterm2/`. iTerm2 loads preferences from `~/.config/iterm2/AppSupport`, which
+  `install.sh` seeds from the snapshot when absent. GUI changes are copied back
+  into the repo to sync.
 
 ## Install Flow
 
@@ -99,3 +103,4 @@ Current accepted ADRs. Superseded records are omitted.
 | [0006](adr/0006-mosh-over-tailscale.md) | mosh over Tailscale, OpenSSH for files | Accepted |
 | [0007](adr/0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted |
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
+| [0009](adr/0009-track-iterm2-preferences.md) | Track iTerm2 preferences from a synced plist | Accepted |
