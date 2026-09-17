@@ -46,8 +46,28 @@ cp dotfiles/git/.gitconfig.local.example ~/.gitconfig.local
 # edit email, signing key, and the 1Password agent path
 ```
 
-Then finish the iTerm2 setup in `iterm2/README.md`: point its custom preferences
-folder at the tracked directory so GUI changes land in the repo.
+Then finish the iTerm2 setup:
+
+### iTerm2 (one-time, macOS)
+
+Point iTerm2's custom preferences folder straight at the repo directory. Use the
+GUI (iTerm2 > Settings > General > Preferences > check "Load preferences from a
+custom folder or URL") or run:
+
+```bash
+defaults write com.googlecode.iterm2 PrefsCustomFolder \
+  -string "$HOME/github.com/jkamenik/tui-ide/dotfiles/iterm2/.config/iterm2/AppSupport"
+defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
+```
+
+Then restart iTerm2BST. Set "Save changes to folder when iTerm2 quits" to
+**Automatically** so every GUI change lands in the repo.
+
+Because iTerm2 writes its plist atomically, a stow symlink would break; here the
+custom folder points directly at a tracked repo directory, so there is no
+symlink and no copy to keep in sync. After changing settings in the GUI, review
+and commit the resulting working-tree change — `git add
+dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`.
 
 ## Manual Steps (Not Automated)
 
