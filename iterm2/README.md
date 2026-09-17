@@ -1,31 +1,40 @@
 # iTerm2
 
-The iTerm2 profile is tracked as a snapshot at
-`iterm2/com.googlecode.iterm2.plist`. iTerm2 loads preferences from
-`~/.config/iterm2/AppSupport` when the custom preferences folder is enabled;
-`install.sh` seeds that file from the snapshot on a fresh macOS machine.
+The iTerm2 profile is managed directly in this repo at
+`dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`. iTerm2
+rewrites its plist atomically, which breaks a symlink, so the custom preferences
+folder points straight at the repo directory instead of being stowed. There is
+no copy to keep in sync.
 
-## One-time GUI setup
+## One-time setup
 
-1. iTerm2 > Settings > General > Preferences.
-2. Check "Load preferences from a custom folder or URL".
-3. Point it at `~/.config/iterm2/AppSupport`.
-
-Once the custom folder is live, iTerm2 writes the plist there and this repo owns
-the profile.
-
-## Syncing changes
-
-The custom folder is the source of truth while you use the GUI. After changing
-settings, copy the plist back into the repo and commit it:
+Point iTerm2's custom preferences folder at the repo directory. Either use the
+GUI or run:
 
 ```bash
-cp ~/.config/iterm2/AppSupport/com.googlecode.iterm2.plist \
-  iterm2/com.googlecode.iterm2.plist
+defaults write com.googlecode.iterm2 PrefsCustomFolder \
+  -string "$HOME/github.com/jkamenik/tui-ide/dotfiles/iterm2/.config/iterm2/AppSupport"
+defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
 ```
 
-On a fresh machine, the snapshot is seeded automatically by `install.sh` (only
-when the plist is absent), then enable the custom folder above.
+Then restart iTerm2. Via the GUI: iTerm2 > Settings > General > Preferences >
+check "Load preferences from a custom folder or URL" and select that directory.
+Set "Save changes to folder when iTerm2 quits" to **Automatically** so every
+change lands in the repo.
+
+## Committing changes
+
+Because iTerm2 writes the plist in place, GUI changes show up as a working-tree
+change. Review and commit them:
+
+```bash
+git diff --stat
+git add dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist
+git commit -m "Update iTerm2 preferences"
+```
+
+On a fresh machine, clone the repo and run the one-time setup above; the profile
+is already in the tree.
 
 ## Required settings for this stack
 

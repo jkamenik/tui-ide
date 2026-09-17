@@ -46,15 +46,5 @@ for pkg in "${DOTFILES[@]}"; do
   stow --dir="$REPO_DIR/dotfiles" --target="$HOME" "$pkg"
 done
 
-if [ "$os" = "Darwin" ]; then
-  iterm_dir="$HOME/.config/iterm2/AppSupport"
-  iterm_plist="$iterm_dir/com.googlecode.iterm2.plist"
-  if [ ! -e "$iterm_plist" ]; then
-    echo "==> Seeding iTerm2 preferences"
-    mkdir -p "$iterm_dir"
-    cp "$REPO_DIR/iterm2/com.googlecode.iterm2.plist" "$iterm_plist"
-  fi
-fi
-
 echo "==> Done. Backups (if any) in $BACKUP_DIR"
 echo "    Next: create ~/.gitconfig.local from dotfiles/git/.gitconfig.local.example"
