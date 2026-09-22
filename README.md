@@ -18,7 +18,8 @@ opencode, ripgrep, stow, jq, lazygit.
 
 macOS casks: Meslo LGS Nerd Font. iTerm2 is installed manually.
 
-Dotfiles via GNU Stow: zsh, git, nvim, herdr.
+Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode TUI config is an
+overlay copied from an example.
 
 iTerm2 preferences are managed directly in the repo at
 `dotfiles/iterm2/.config/iterm2/AppSupport/`; iTerm2's custom preferences folder
@@ -54,13 +55,25 @@ cp dotfiles/nvim/.config/nvim/lua/obsidian-local.example.lua \
 # edit the vault path (e.g. ~/github.com/jkamenik/second-brain)
 ```
 
+For the opencode TUI theme, copy the config overlay:
+
+```bash
+cp dotfiles/opencode/.config/opencode/tui.jsonc.example \
+  ~/.config/opencode/tui.jsonc
+# theme "system" follows the terminal palette; add the herdr plugin if used
+```
+
 Then finish the iTerm2 setup:
 
-### iTerm2 (one-time, macOS)
+### iTerm2 (macOS)
 
-Point iTerm2's custom preferences folder straight at the repo directory. Use the
-GUI (iTerm2 > Settings > General > Preferences > check "Load preferences from a
-custom folder or URL") or run:
+`install.sh` points iTerm2's custom preferences folder at the repo directory
+(it skips this while iTerm2 is running, so quit iTerm2 and re-run if it says
+so). Restart iTerm2 afterward; the "Warm Burnout Dark" preset appears under
+Settings > Profiles > Colors > Color Presets, and herdr (`theme = "terminal"`)
+and opencode (`"theme": "system"`) follow the same palette.
+
+To do it by hand instead:
 
 ```bash
 defaults write com.googlecode.iterm2 PrefsCustomFolder \
@@ -68,7 +81,7 @@ defaults write com.googlecode.iterm2 PrefsCustomFolder \
 defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
 ```
 
-Then restart iTerm2BST. Set "Save changes to folder when iTerm2 quits" to
+Then restart iTerm2. Set "Save changes to folder when iTerm2 quits" to
 **Automatically** so every GUI change lands in the repo.
 
 Because iTerm2 writes its plist atomically, a stow symlink would break; here the

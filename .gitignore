@@ -2,3 +2,10 @@
 .gitconfig.local
 *.local
 obsidian-local.lua
+
+# herdr runtime state (rewritten in place, replaces stow links)
+dotfiles/herdr/.config/herdr/.plugins.lock
+dotfiles/herdr/.config/herdr/herdr-client.log
+dotfiles/herdr/.config/herdr/herdr-client.sock
+dotfiles/herdr/.config/herdr/herdr.sock
+dotfiles/herdr/.config/herdr/session.json

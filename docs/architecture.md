@@ -52,7 +52,7 @@ flowchart TB
 | iTerm2 | macOS terminal | Clickable custom URL schemes (obsidian://, onepassword://); prefs tracked in-repo |
 | Moshi | iOS terminal | Mosh-native, herdr-integrated; Blink is the fallback |
 | zsh + oh-my-zsh | Shell | Portable across macOS and Linux |
-| herdr | Multiplexer | Server-side sessions; narrow-screen TUI for mobile |
+| herdr | Multiplexer | Server-side sessions; UI theme follows the terminal palette |
 | Neovim | Editor | Human editing surface; agent lives in the opencode TUI |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
@@ -66,24 +66,29 @@ flowchart TB
 - **Toolchain:** one `Brewfile` for macOS and Linuxbrew; casks isolated in
   `Brewfile.macos`; apt fallback for Linux without Homebrew.
 - **Dotfiles:** Stow packages map directly onto `$HOME`. Adding a package means
-  adding a directory under `dotfiles/` and listing it in `install.sh`.
+  adding a directory under `dotfiles/` and listing it in `install.sh`. Stow
+  runs with `--no-folding` so apps that rewrite their config in place never
+  write into the repo tree.
 - **Overlays:** machine-specific values live in `*.local` files that are
   git-ignored. `dotfiles/git/.gitconfig` includes `~/.gitconfig.local`, which
   holds identity and the 1Password SSH signing agent path.
 - **Secrets:** the 1Password CLI (`op`) provides credentials. No secret is ever
   committed.
 - **iTerm2 (macOS):** `com.googlecode.iterm2.plist` lives in the repo at
-  `dotfiles/iterm2/.config/iterm2/AppSupport/`. iTerm2's custom preferences
-  folder points at that directory, so GUI changes land in the working tree. It
-  is not stowed.
+  `dotfiles/iterm2/.config/iterm2/AppSupport/`. `install.sh` enables iTerm2's
+  custom preferences folder with `defaults write` when iTerm2 is quit, so GUI
+  changes land in the working tree. It is not stowed.
+- **Colors:** the iTerm2 preset ("Warm Burnout Dark") is the source of truth;
+  herdr sets `theme.name = "terminal"` and opencode sets `"theme": "system"` in
+  its local `tui.jsonc`, so both render from the terminal palette.
 
 ## Install Flow
 
 1. `install.sh` detects the OS.
 2. `brew bundle` installs the toolchain (casks on macOS only).
 3. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`.
-4. `stow` links the dotfiles into `$HOME`.
-5. Manual steps finish the GUI and account setup (iTerm2, Tailscale, `op`).
+4. `stow --no-folding` links the dotfiles into `$HOME`.
+5. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
 
 ## Relationship to Other Repos
 
@@ -106,6 +111,7 @@ Current accepted ADRs. Superseded records are omitted.
 | [0006](adr/0006-mosh-over-tailscale.md) | mosh over Tailscale, OpenSSH for files | Accepted |
 | [0007](adr/0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted |
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
-| [0010](adr/0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted |
 | [0011](adr/0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted |
 | [0012](adr/0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted |
+| [0013](adr/0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted |
+| [0014](adr/0014-stow-dotfiles-without-folding.md) | Stow dotfiles without folding | Accepted |

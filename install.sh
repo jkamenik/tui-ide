@@ -26,6 +26,11 @@ else
   exit 1
 fi
 
+if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
+  echo "==> Installing oh-my-zsh"
+  git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+fi
+
 if ! have stow; then
   echo "stow is required to link dotfiles" >&2
   exit 1
@@ -43,8 +48,21 @@ for pkg in "${DOTFILES[@]}"; do
       echo "    backed up ~/$rel"
     fi
   done < <(cd "$REPO_DIR/dotfiles/$pkg" && find . -type f | sed 's|^\./||')
-  stow --dir="$REPO_DIR/dotfiles" --target="$HOME" "$pkg"
+  stow --dir="$REPO_DIR/dotfiles" --target="$HOME" --no-folding "$pkg"
 done
+
+if [ "$os" = "Darwin" ]; then
+  if [ "$(defaults read com.googlecode.iterm2 LoadPrefsFromCustomFolder 2>/dev/null || echo 0)" = "1" ]; then
+    :
+  elif pgrep -x iTerm2 >/dev/null 2>&1; then
+    echo "==> iTerm2 is running: quit it and re-run ./install.sh to enable the tracked preferences folder"
+  else
+    echo "==> Pointing iTerm2 at the tracked preferences folder"
+    defaults write com.googlecode.iterm2 PrefsCustomFolder \
+      -string "$REPO_DIR/dotfiles/iterm2/.config/iterm2/AppSupport"
+    defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
+  fi
+fi
 
 echo "==> Done. Backups (if any) in $BACKUP_DIR"
 echo "    Next: create ~/.gitconfig.local from dotfiles/git/.gitconfig.local.example"

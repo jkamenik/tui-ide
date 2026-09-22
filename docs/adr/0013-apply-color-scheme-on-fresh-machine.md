@@ -1,0 +1,53 @@
+# tui-ide-ADR-0013: Apply the tracked color scheme on a fresh machine
+
+**Status:** Accepted
+**Date:** 2026-09-22
+
+## Context
+
+[ADR-0010](0010-manage-iterm2-plist-in-repo.md) kept the iTerm2 plist in the
+repo but left enabling the custom preferences folder as a manual GUI step, and
+no herdr config was tracked. On a fresh machine iTerm2 ran with default colors:
+the tracked "Warm Burnout Dark" preset never appeared in the Color Presets
+list, and herdr fell back to its default `catppuccin` theme instead of
+following the terminal.
+
+## Decision
+
+`install.sh` will point iTerm2 at the tracked preferences folder on macOS with
+`defaults write`, only when the custom folder is not already enabled and iTerm2
+is not running (a running instance overwrites the keys on quit). The plist
+stays at `dotfiles/iterm2/.config/iterm2/AppSupport/` and is still not stowed.
+herdr will track `dotfiles/herdr/.config/herdr/config.toml` with
+`theme.name = "terminal"`, and opencode's TUI config sets `"theme": "system"`,
+so both render from the terminal's ANSI palette and the iTerm2 preset remains
+the single source of color truth. opencode's TUI config is machine-local
+(`~/.config/opencode/tui.jsonc`, which also holds the herdr session plugin), so
+the repo tracks a `.example` and `install.sh` documents the setup rather than
+stowing it.
+
+## Consequences
+
+### Positive
+
+- `./install.sh` plus an iTerm2 restart applies the tracked colors; no GUI step.
+- herdr and opencode match the terminal palette on macOS, Linux, and iOS
+  clients without a second theme to maintain.
+
+### Negative
+
+- The `defaults write` must run with iTerm2 quit, so `install.sh` prints a
+  reminder instead of applying while it runs.
+- herdr and opencode give up their built-in themes unless someone edits the
+  tracked configs.
+
+### Neutral
+
+- Replaces the one-time GUI toggle left by ADR-0010. The plist location and
+  sync model are unchanged.
+
+## See Also
+
+- [Architecture](../architecture.md)
+- [ADR-0004](0004-herdr-as-multiplexer.md)
+- [ADR-0010](0010-manage-iterm2-plist-in-repo.md)
