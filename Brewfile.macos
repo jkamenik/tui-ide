@@ -2,3 +2,14 @@
 # iTerm2 is intentionally omitted: it is already installed manually and the
 # cask would fight that install. Install or update it from the app.
 cask "font-meslo-lg-nerd-font"
+
+# herdr [ui.toast] delivery = "system" falls back to `osascript -e 'display
+# notification ...'` without this, and macOS attributes those notifications to
+# Script Editor (clicking them launches Script Editor). With terminal-notifier
+# installed herdr posts through it and -activate-commands iTerm2, so clicking
+# the notification focuses the terminal. See herdr issue #1155.
+#
+# macOS 26/27 auto-denies notification authorization to ad-hoc-signed apps:
+# after `brew install`, re-sign the app with a stable self-signed identity
+# (install.sh) and approve it once under System Settings > Notifications.
+brew "terminal-notifier"
