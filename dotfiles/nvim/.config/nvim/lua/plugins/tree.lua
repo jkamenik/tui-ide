@@ -28,5 +28,19 @@ return {
         indent = { with_expanders = true },
       },
     },
+    config = function(_, opts)
+      require("neo-tree").setup(opts)
+      vim.api.nvim_create_autocmd("VimEnter", {
+        callback = function()
+          local no_args = vim.fn.argc() == 0
+          local is_dir = vim.fn.argc() == 1 and vim.fn.isdirectory(vim.fn.argv(0)) == 1
+          if no_args or is_dir then
+            vim.defer_fn(function()
+              require("neo-tree.command").execute({ action = "show" })
+            end, 0)
+          end
+        end,
+      })
+    end,
   },
 }

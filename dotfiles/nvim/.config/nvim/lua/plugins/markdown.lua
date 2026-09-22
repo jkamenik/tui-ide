@@ -3,7 +3,9 @@ if not ok then
   obs_local = {}
 end
 
-return {
+local workspaces = obs_local.workspaces or {}
+
+local spec = {
   {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSInstall markdown markdown_inline",
@@ -31,7 +33,10 @@ return {
       require("render-markdown").setup(opts)
     end,
   },
-  {
+}
+
+if #workspaces > 0 then
+  spec[#spec + 1] = {
     "epwalsh/obsidian.nvim",
     version = "*",
     ft = "markdown",
@@ -42,12 +47,14 @@ return {
     },
     opts = {
       ui = { enable = false },
-      workspaces = obs_local.workspaces or {},
+      workspaces = workspaces,
       completion = { nvim_cmp = false },
       picker = { name = "telescope.nvim" },
     },
     config = function(_, opts)
       require("obsidian").setup(opts)
     end,
-  },
-}
+  }
+end
+
+return spec

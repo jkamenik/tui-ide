@@ -93,6 +93,13 @@ fi
 # fi
 export EDITOR=hx
 
+# Apple Terminal does not answer nvim's background-color (OSC11/DSR) probe,
+# which delays nvim startup and shows E1568. Skip the probe only there; iTerm2
+# keeps auto-detection.
+if [[ "$TERM_PROGRAM" == "Apple_Terminal" ]]; then
+  export NVIM_NOTTYFAST=1
+fi
+
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
