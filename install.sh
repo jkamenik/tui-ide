@@ -62,6 +62,26 @@ if [ "$os" = "Darwin" ]; then
       -string "$REPO_DIR/dotfiles/iterm2/.config/iterm2/AppSupport"
     defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
   fi
+
+  # Run the herdr server under launchd so it is not part of any terminal app's
+  # LaunchServices coalition (macOS force-quits coalition members when the app
+  # quits, killing the herdr server and its panes).
+  stow --dir="$REPO_DIR/dotfiles" --target="$HOME" --no-folding herdr-launchd
+  local_plist_dir="$HOME/.config/herdr-launchd"
+  mkdir -p "$local_plist_dir"
+  sed -e "s|__HERDR_BIN__|$(command -v herdr)|" \
+      -e "s|__HOME__|$HOME|" \
+      "$REPO_DIR/dotfiles/herdr-launchd/Library/LaunchAgents/dev.herdr.server.plist.example" \
+      > "$local_plist_dir/dev.herdr.server.plist"
+  if launchctl print "gui/$(id -u)/dev.herdr.server" >/dev/null 2>&1; then
+    :
+  elif pgrep -f "$(command -v herdr) server" >/dev/null 2>&1 || [ -S "$HOME/.config/herdr/herdr.sock" ]; then
+    echo "==> herdr server is running; adopt launchd ownership at the next server stop:"
+    echo "    launchctl bootstrap gui/$(id -u) $local_plist_dir/dev.herdr.server.plist"
+  else
+    launchctl bootstrap "gui/$(id -u)" "$local_plist_dir/dev.herdr.server.plist"
+    echo "==> Registered herdr server as a launchd user agent (survives iTerm2 quit)"
+  fi
 fi
 
 echo "==> Done. Backups (if any) in $BACKUP_DIR"
