@@ -52,6 +52,13 @@ for pkg in "${DOTFILES[@]}"; do
 done
 
 if [ "$os" = "Darwin" ]; then
+  # Register terminal-notifier's helper app with Notification Center.
+  # macOS authorizes notifications per app identity; opening the bundled app
+  # once registers it or permission errors ("Not allowed for this application").
+  if have terminal-notifier; then
+    open "$(brew --prefix)/opt/terminal-notifier/terminal-notifier.app" 2>/dev/null || true
+  fi
+
   if [ "$(defaults read com.googlecode.iterm2 LoadPrefsFromCustomFolder 2>/dev/null || echo 0)" = "1" ]; then
     :
   elif pgrep -x iTerm2 >/dev/null 2>&1; then
