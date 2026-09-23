@@ -41,6 +41,15 @@ local spec = {
       require("render-markdown").setup(opts)
     end,
   },
+  {
+    "cavanaug/render-markdown-mermaid.nvim",
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      "MeanderingProgrammer/render-markdown.nvim",
+    },
+    build = ":TSUpdate markdown markdown_inline",
+    opts = {},
+  },
 }
 
 if #workspaces > 0 then
