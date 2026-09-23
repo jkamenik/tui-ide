@@ -25,7 +25,7 @@ flowchart TB
         Shell["zsh + oh-my-zsh"]
         Mux["herdr"]
         Edit["Neovim"]
-        Tools["mosh, git, gh, opencode, ripgrep, lazygit"]
+        Tools["mosh, git, gh, ansible, opencode, ripgrep, lazygit, terraform, gcloud"]
     end
 
     subgraph Remote["Always-on host - automations repo"]
@@ -58,6 +58,7 @@ flowchart TB
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
 | LazyGit | Git client | TUI launched from Neovim with `<leader>gg` |
+| Terraform, Ansible, gcloud | Cloud & IaC | Provisioning and config management against GCP |
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
 | obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled |
 

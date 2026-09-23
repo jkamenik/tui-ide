@@ -2,6 +2,7 @@
 # Casks live in Brewfile.macos.
 brew "git"
 brew "gh"
+brew "ansible"
 brew "neovim"
 brew "mosh"
 brew "herdr"
@@ -10,3 +11,4 @@ brew "ripgrep"
 brew "stow"
 brew "jq"
 brew "lazygit"
+brew "hashicorp/tap/terraform"

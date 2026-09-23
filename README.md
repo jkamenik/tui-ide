@@ -9,14 +9,15 @@ This is a complete stack:
 - [Herdr](https://herdr.dev) for terminal multiplexing
 - [NeoVim](https://neovim.io) as the editor
 - Dotfiles (with local sensitive information overlays, if needed)
-- Various developer tools like `mosh`, `gh`
+- Various developer tools like `mosh`, `gh`, `terraform`, `ansible`
 
 ## What It Installs
 
-Toolchain via Homebrew (macOS and Linuxbrew): git, gh, neovim, mosh, herdr,
-opencode, ripgrep, stow, jq, lazygit.
+Toolchain via Homebrew (macOS and Linuxbrew): git, gh, ansible, neovim, mosh,
+herdr, opencode, ripgrep, stow, jq, lazygit, terraform.
 
-macOS casks: Meslo LGS Nerd Font. iTerm2 is installed manually.
+macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
+installed manually.
 
 Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode TUI config is an
 overlay copied from an example.
@@ -93,6 +94,8 @@ dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`.
 ## Manual Steps (Not Automated)
 
 - Tailscale: install and join the tailnet (cask on macOS, apt repo on Linux).
+- Google Cloud CLI (`gcloud`): covered by the macOS cask; on Linux, install
+  from the Google Cloud apt repo.
 - 1Password CLI (`op`) sign-in.
 
 ## Documentation
