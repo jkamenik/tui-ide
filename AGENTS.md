@@ -33,6 +33,9 @@ and the developer tools they need. It does not own scheduled execution
    git-ignored) and provide a `.example`.
 5. **Casks are macOS-only.** Gate them behind `Brewfile.macos`.
 6. **Cross-platform first.** Assume macOS and Linux. Note any macOS-only path.
+7. **No `git worktrees`.** The stow symlinks under `$HOME` resolve to the main
+   checkout's absolute path, so only main is "live". A worktree cannot serve
+   live config; use branches and merge into main instead.
 
 ## Making Changes
 
