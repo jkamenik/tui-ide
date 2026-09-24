@@ -37,7 +37,8 @@ cd ~/github.com/jkamenik/tui-ide
 `install.sh` detects the OS, runs `brew bundle`, and stows the dotfiles. Any
 file that would be overwritten is backed up to
 `~/.dotfiles-backup/<timestamp>/` first. Linux without Homebrew falls back to
-apt for the core packages.
+apt for the core packages plus Neovim, and installs Herdr from its official
+installer (not in apt).
 
 ## After Install
 

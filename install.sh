@@ -20,7 +20,11 @@ if have brew; then
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update
-  sudo apt-get install -y git curl mosh ripgrep stow jq lazygit
+  sudo apt-get install -y git curl mosh neovim ripgrep stow jq lazygit
+  if ! have herdr && [ ! -x "$HOME/.local/bin/herdr" ]; then
+    echo "==> Installing herdr (not in apt) from herdr.dev"
+    curl -fsSL https://herdr.dev/install.sh | sh
+  fi
 else
   echo "Need Homebrew or apt-get. Install Homebrew first: https://brew.sh" >&2
   exit 1
