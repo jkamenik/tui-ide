@@ -1,7 +1,9 @@
 # Architecture Decision Records
 
 One decision per file, `NNNN-slug.md`. Accepted records are immutable; replace
-one by adding a new ADR that supersedes it.
+one by adding a new ADR that supersedes it. Correcting typos, grammar, or a
+broken cross-reference link in an accepted record is not a change of decision
+and may be fixed in place.
 
 See [Architecture](../architecture.md) for the compiled current state.
 

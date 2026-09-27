@@ -24,7 +24,9 @@ and the developer tools they need. It does not own scheduled execution
 ## Conventions
 
 1. **One decision per ADR.** Files are `docs/adr/NNNN-slug.md`. Add a row to the
-   index in `docs/adr/README.md`. Never edit an accepted ADR; supersede it.
+   index in `docs/adr/README.md`. Never rewrite the decision in an accepted ADR;
+   supersede it. Typos, grammar, and broken cross-reference links may be fixed
+   in place, in any file.
 2. **Plain GitHub Markdown.** No Obsidian frontmatter and no wikilinks in repo
    docs. Use relative Markdown links.
 3. **Keep `install.sh` idempotent and safe.** Back up any file before replacing
