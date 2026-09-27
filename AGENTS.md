@@ -40,7 +40,10 @@ and the developer tools they need. It does not own scheduled execution
 ## Making Changes
 
 1. Edit files under `dotfiles/`.
-2. Apply with `./install.sh` or `stow -d dotfiles -t ~ <pkg>`.
+2. Apply with `./install.sh`, or `stow -d dotfiles -t ~ --no-folding <pkg>`.
+   Always pass `--no-folding`: a folded directory makes `$HOME/.config/<pkg>`
+   a symlink to the repo, which lets `install.sh` move tracked files out of the
+   tree ([ADR-0016](docs/adr/0016-never-back-up-files-that-resolve-into-the-repo.md)).
 3. Verify with the commands in `README.md`.
 4. When behavior changes, update `docs/architecture.md` and add or supersede an
    ADR.
