@@ -69,7 +69,9 @@ flowchart TB
 - **Dotfiles:** Stow packages map directly onto `$HOME`. Adding a package means
   adding a directory under `dotfiles/` and listing it in `install.sh`. Stow
   runs with `--no-folding` so apps that rewrite their config in place never
-  write into the repo tree.
+  write into the repo tree. The backup step resolves each target with
+  `realpath` and skips anything inside the repo, so a leftover directory fold
+  can never make `install.sh` move a tracked file out of the tree.
 - **Overlays:** machine-specific values live in `*.local` files that are
   git-ignored. `dotfiles/git/.gitconfig` includes `~/.gitconfig.local`, which
   holds identity and the 1Password SSH signing agent path.
@@ -87,7 +89,8 @@ flowchart TB
 
 1. `install.sh` detects the OS.
 2. `brew bundle` installs the toolchain (casks on macOS only).
-3. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`.
+3. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
+   that resolve into the repo are skipped.
 4. `stow --no-folding` links the dotfiles into `$HOME`.
 5. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
 
@@ -117,3 +120,4 @@ Current accepted ADRs. Superseded records are omitted.
 | [0013](adr/0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted |
 | [0014](adr/0014-stow-dotfiles-without-folding.md) | Stow dotfiles without folding | Accepted |
 | [0015](adr/0015-run-herdr-server-under-launchd-on-macos.md) | Run the herdr server under launchd on macOS | Accepted |
+| [0016](adr/0016-never-back-up-files-that-resolve-into-the-repo.md) | Never back up files that resolve into the repo | Accepted |

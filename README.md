@@ -36,7 +36,9 @@ cd ~/github.com/jkamenik/tui-ide
 
 `install.sh` detects the OS, runs `brew bundle`, and stows the dotfiles. Any
 file that would be overwritten is backed up to
-`~/.dotfiles-backup/<timestamp>/` first. Linux without Homebrew falls back to
+`~/.dotfiles-backup/<timestamp>/` first; files that resolve back into the
+repository are skipped, so the backup step can never move a tracked file out of
+the tree. Linux without Homebrew falls back to
 apt for the core packages plus Neovim, and installs Herdr from its official
 installer (not in apt).
 
@@ -98,6 +100,31 @@ dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`.
 - Google Cloud CLI (`gcloud`): covered by the macOS cask; on Linux, install
   from the Google Cloud apt repo.
 - 1Password CLI (`op`) sign-in.
+
+## Troubleshooting
+
+**`stow` reports "existing target is not owned by stow"**, or a config app
+ignores your dotfiles: a leftover directory fold from before `--no-folding` is
+probably in place, so `$HOME/.config/<pkg>` is one symlink into the repo instead
+of a directory of per-file links. Remove the link (never its target) and re-stow:
+
+```bash
+for p in nvim herdr; do
+  [ -L ~/.config/$p ] && rm ~/.config/$p
+done
+./install.sh
+```
+
+Confirm the result is per-file links before trusting it:
+
+```bash
+ls -la ~/.config/nvim/   # init.lua should be a symlink, not a real file
+```
+
+**Neovim plugins appear missing after a reinstall**: the plugin directory
+(`~/.local/share/nvim/lazy/`) is not managed by stow and is never touched by
+`install.sh`. If plugins vanish, the config is gone, not the plugins — check
+`git status` in this repo and look in `~/.dotfiles-backup/<timestamp>/`.
 
 ## Documentation
 

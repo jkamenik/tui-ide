@@ -22,6 +22,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0013](0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted | 2026-09-22 |
 | [0014](0014-stow-dotfiles-without-folding.md) | Stow dotfiles without folding | Accepted | 2026-09-22 |
 | [0015](0015-run-herdr-server-under-launchd-on-macos.md) | Run the herdr server under launchd on macOS | Accepted | 2026-09-22 |
+| [0016](0016-never-back-up-files-that-resolve-into-the-repo.md) | Never back up files that resolve into the repo | Accepted | 2026-09-27 |
 
 ## Format
 
