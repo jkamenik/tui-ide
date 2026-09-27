@@ -17,9 +17,9 @@ and the developer tools they need. It does not own scheduled execution
 | `Brewfile.macos` | macOS-only casks |
 | `install.sh` | Bootstrap: OS detect, `brew bundle`, backup, `stow` |
 | `dotfiles/<pkg>/...` | GNU Stow packages mapped onto `$HOME` |
+| `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
-| `iterm2/` | Terminal profile notes |
 
 ## Conventions
 
