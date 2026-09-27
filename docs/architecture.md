@@ -115,6 +115,7 @@ Current accepted ADRs. Superseded records are omitted.
 | [0006](adr/0006-mosh-over-tailscale.md) | mosh over Tailscale, OpenSSH for files | Accepted |
 | [0007](adr/0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted |
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
+| [0010](adr/0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted |
 | [0011](adr/0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted |
 | [0012](adr/0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted |
 | [0013](adr/0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted |

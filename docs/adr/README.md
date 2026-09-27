@@ -15,8 +15,8 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0006](0006-mosh-over-tailscale.md) | mosh over Tailscale, OpenSSH for files | Accepted | 2026-09-16 |
 | [0007](0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted | 2026-09-16 |
 | [0008](0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted | 2026-09-16 |
-| [0009](0009-track-iterm2-preferences.md) | Track iTerm2 preferences from a synced plist | Superseded | 2026-09-16 |
-| [0010](0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Superseded | 2026-09-16 |
+| [0009](0009-track-iterm2-preferences.md) | Track iTerm2 preferences from a synced plist | Superseded by [0010](0010-manage-iterm2-plist-in-repo.md) | 2026-09-16 |
+| [0010](0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted | 2026-09-16 |
 | [0011](0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted | 2026-09-16 |
 | [0012](0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted | 2026-09-17 |
 | [0013](0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted | 2026-09-22 |
