@@ -19,12 +19,13 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0008](0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted | 2026-09-16 |
 | [0009](0009-track-iterm2-preferences.md) | Track iTerm2 preferences from a synced plist | Superseded by [0010](0010-manage-iterm2-plist-in-repo.md) | 2026-09-16 |
 | [0010](0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted | 2026-09-16 |
-| [0011](0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted | 2026-09-16 |
+| [0011](0011-lazygit-as-git-client.md) | LazyGit as the git client | Superseded by [0017](0017-lazygit-from-brewfile-or-github-releases.md) | 2026-09-16 |
 | [0012](0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted | 2026-09-17 |
 | [0013](0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted | 2026-09-22 |
 | [0014](0014-stow-dotfiles-without-folding.md) | Stow dotfiles without folding | Accepted | 2026-09-22 |
 | [0015](0015-run-herdr-server-under-launchd-on-macos.md) | Run the herdr server under launchd on macOS | Accepted | 2026-09-22 |
 | [0016](0016-never-back-up-files-that-resolve-into-the-repo.md) | Never back up files that resolve into the repo | Accepted | 2026-09-27 |
+| [0017](0017-lazygit-from-brewfile-or-github-releases.md) | LazyGit as the git client, from Brewfile or GitHub releases | Accepted | 2026-09-27 |
 
 ## Format
 

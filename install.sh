@@ -21,10 +21,30 @@ if have brew; then
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update
-  sudo apt-get install -y git curl mosh neovim ripgrep stow jq lazygit
+  sudo apt-get install -y git curl mosh neovim ripgrep stow jq
   if ! have herdr && [ ! -x "$HOME/.local/bin/herdr" ]; then
     echo "==> Installing herdr (not in apt) from herdr.dev"
     curl -fsSL https://herdr.dev/install.sh | sh
+  fi
+  # lazygit has no Debian/Ubuntu package (not in 24.04 "noble", which the
+  # always-on host runs), so apt-get would abort the whole script. Take the
+  # release tarball instead, the same shape as the herdr fallback above.
+  if ! have lazygit && [ ! -x "$HOME/.local/bin/lazygit" ]; then
+    echo "==> Installing lazygit (not in apt) from GitHub releases"
+    case "$(uname -m)" in
+      x86_64) asset_arch=x86_64 ;;
+      aarch64 | arm64) asset_arch=arm64 ;;
+      *) echo "Unsupported architecture for lazygit: $(uname -m)" >&2; exit 1 ;;
+    esac
+    # Resolve latest via the /releases/latest redirect: no API call, so no rate limit.
+    tag="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      https://github.com/jesseduffield/lazygit/releases/latest | sed 's|.*/tag/||')"
+    mkdir -p "$HOME/.local/bin"
+    tmp="$(mktemp -d)"
+    curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/${tag}/lazygit_${tag#v}_linux_${asset_arch}.tar.gz" \
+      | tar -xz -C "$tmp" lazygit
+    install -m 0755 "$tmp/lazygit" "$HOME/.local/bin/lazygit"
+    rm -rf "$tmp"
   fi
 else
   echo "Need Homebrew or apt-get. Install Homebrew first: https://brew.sh" >&2

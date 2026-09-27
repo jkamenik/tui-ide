@@ -65,7 +65,10 @@ flowchart TB
 ## Cross-Machine Model
 
 - **Toolchain:** one `Brewfile` for macOS and Linuxbrew; casks isolated in
-  `Brewfile.macos`; apt fallback for Linux without Homebrew.
+  `Brewfile.macos`; apt fallback for Linux without Homebrew. Tools the
+  distribution does not package install from upstream instead: herdr from
+  `herdr.dev`, LazyGit from its GitHub release tarball into `$HOME/.local/bin`.
+  Each is skipped when the binary is already present.
 - **Dotfiles:** Stow packages map directly onto `$HOME`. Adding a package means
   adding a directory under `dotfiles/` and listing it in `install.sh`. Stow
   runs with `--no-folding` so apps that rewrite their config in place never
@@ -116,9 +119,10 @@ Current accepted ADRs. Superseded records are omitted.
 | [0007](adr/0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted |
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
 | [0010](adr/0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted |
-| [0011](adr/0011-lazygit-as-git-client.md) | LazyGit as the git client | Accepted |
+| [0011](adr/0011-lazygit-as-git-client.md) | LazyGit as the git client | Superseded by [0017](adr/0017-lazygit-from-brewfile-or-github-releases.md) |
 | [0012](adr/0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted |
 | [0013](adr/0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted |
 | [0014](adr/0014-stow-dotfiles-without-folding.md) | Stow dotfiles without folding | Accepted |
 | [0015](adr/0015-run-herdr-server-under-launchd-on-macos.md) | Run the herdr server under launchd on macOS | Accepted |
 | [0016](adr/0016-never-back-up-files-that-resolve-into-the-repo.md) | Never back up files that resolve into the repo | Accepted |
+| [0017](adr/0017-lazygit-from-brewfile-or-github-releases.md) | LazyGit as the git client, from Brewfile or GitHub releases | Accepted |
