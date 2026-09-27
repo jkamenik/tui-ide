@@ -3,7 +3,8 @@
 # Works on macOS (Homebrew) and Linux (Homebrew/Linuxbrew; apt fallback).
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Physical path: the backup guard below compares against realpath output.
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 DOTFILES=(nvim herdr git zsh)
 
@@ -46,11 +47,19 @@ for pkg in "${DOTFILES[@]}"; do
   # Back up real files that stow would refuse to replace.
   while IFS= read -r rel; do
     target="$HOME/$rel"
-    if [ -e "$target" ] && [ ! -L "$target" ]; then
-      mkdir -p "$BACKUP_DIR/$(dirname "$rel")"
-      mv "$target" "$BACKUP_DIR/$rel"
-      echo "    backed up ~/$rel"
+    # Already a stow link, or nothing to replace.
+    if [ ! -e "$target" ] || [ -L "$target" ]; then
+      continue
     fi
+    # Skip anything already resolving into the repo. A folded directory symlink
+    # (e.g. ~/.config/nvim -> dotfiles/nvim/.config/nvim) makes $target the
+    # tracked file itself, and moving it would delete the source of truth.
+    case "$(realpath "$target" 2>/dev/null || true)" in
+      "$REPO_DIR"/*) continue ;;
+    esac
+    mkdir -p "$BACKUP_DIR/$(dirname "$rel")"
+    mv "$target" "$BACKUP_DIR/$rel"
+    echo "    backed up ~/$rel"
   done < <(cd "$REPO_DIR/dotfiles/$pkg" && find . -type f | sed 's|^\./||')
   stow --dir="$REPO_DIR/dotfiles" --target="$HOME" --no-folding "$pkg"
 done
