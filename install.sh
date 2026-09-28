@@ -64,9 +64,44 @@ elif [ "$os" = "Linux" ] && have apt-get; then
     echo "==> Installing claude-code (not in apt) from claude.ai"
     curl -fsSL https://claude.ai/install.sh | sh
   fi
+  # nono is the sandbox the agent CLIs run under (ADR-0020). It is not in apt
+  # either, but upstream ships a release .deb per architecture whose only
+  # dependency is a libc6 floor, so apt can install it as any other package.
+  if ! have nono; then
+    echo "==> Installing nono (not in apt) from GitHub releases"
+    # Resolve latest via the /releases/latest redirect: no API call, so no rate limit.
+    tag="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      https://github.com/nolabs-ai/nono/releases/latest | sed 's|.*/tag/||')"
+    # Debian architecture names, not the uname ones the lazygit tarball uses.
+    case "$(uname -m)" in
+      x86_64) deb_arch=amd64 ;;
+      aarch64 | arm64) deb_arch=arm64 ;;
+      *) echo "Unsupported architecture for nono: $(uname -m)" >&2; exit 1 ;;
+    esac
+    tmp="$(mktemp -d)"
+    curl -fsSL "https://github.com/nolabs-ai/nono/releases/download/${tag}/nono-cli_${tag#v}_${deb_arch}.deb" \
+      -o "$tmp/nono.deb"
+    # A local path rather than dpkg -i, so apt resolves the libc6 dependency
+    # instead of leaving a half-configured package behind.
+    (cd "$tmp" && sudo apt-get install -y ./nono.deb)
+    rm -rf "$tmp"
+  fi
 else
   echo "Need Homebrew or apt-get. Install Homebrew first: https://brew.sh" >&2
   exit 1
+fi
+
+# Pre-pull the nono packs for the two agents sandboxed in the zsh dotfiles.
+# `nono run --profile ...` offers to install a missing pack on a TTY and exits
+# with a hint when there is none, so pull them here, where the output is
+# visible, rather than surprising the user on the first agent launch. A registry
+# failure must not abort a bootstrap that has already installed everything else.
+if have nono; then
+  echo "==> Installing nono sandbox profiles"
+  for pack in nolabs-ai/claude nolabs-ai/opencode; do
+    nono pull "$pack" ||
+      echo "    nono pull $pack failed; re-run it before the first sandboxed session" >&2
+  done
 fi
 
 if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
@@ -114,6 +149,35 @@ for pkg in "${DOTFILES[@]}"; do
   stow --dir="$REPO_DIR/dotfiles" --target="$HOME" --no-folding "$pkg"
 done
 
+# Claude Code user settings are merged, not stowed. `~/.claude/settings.json` is
+# the only user-level settings file and has no local-overlay sibling, so the
+# hooks iTerm2 and herdr install into it (absolute paths, machine-specific)
+# cannot be separated from the portable preferences. Linking the tracked file
+# would put those paths in the repo; replacing it would drop the hooks. So the
+# tracked file is a defaults template and the real file stays a real file:
+# copied on a fresh machine, deep-merged on an existing one with tracked keys
+# winning, which is the same precedence stow gives a link. jq `*` merges
+# objects key by key, so keys only the local file has (the hooks) survive.
+claude_defaults="$REPO_DIR/dotfiles/claude/.claude/settings.defaults.json"
+claude_settings="$HOME/.claude/settings.json"
+# -L is tested before -f: -f follows symlinks, so a link to a file that is
+# missing would read as "no file" and get overwritten.
+if [ -L "$claude_settings" ]; then
+  echo "==> ~/.claude/settings.json is a link; leaving it alone (see ADR-0019)"
+elif [ ! -f "$claude_settings" ]; then
+  mkdir -p "$HOME/.claude"
+  cp "$claude_defaults" "$claude_settings"
+  echo "==> Installed Claude Code settings from dotfiles/claude"
+elif have jq; then
+  mkdir -p "$BACKUP_DIR/.claude"
+  cp "$claude_settings" "$BACKUP_DIR/.claude/settings.json"
+  jq -S -s '.[1] * .[0]' "$claude_defaults" "$claude_settings" >"$claude_settings.tmp"
+  mv "$claude_settings.tmp" "$claude_settings"
+  echo "==> Merged Claude Code settings from dotfiles/claude (previous in $BACKUP_DIR)"
+else
+  echo "==> jq is missing; leaving ~/.claude/settings.json untouched" >&2
+fi
+
 if [ "$os" = "Darwin" ]; then
   # Register terminal-notifier's helper app with Notification Center.
   # macOS authorizes notifications per app identity; opening the bundled app
@@ -155,4 +219,18 @@ if [ "$os" = "Darwin" ]; then
 fi
 
 echo "==> Done. Backups (if any) in $BACKUP_DIR"
-echo "    Next: create ~/.gitconfig.local from dotfiles/git/.gitconfig.local.example"
+# Suggest only the overlays this machine is actually missing. A fixed hint
+# stays wrong after the first run and trains the reader to ignore the tail of
+# the output. The nvim vault overlay is deliberately absent: the vault lives in
+# a repo this one does not own, so it is opt-in and documented in the README.
+# Guarded on ${#next[@]} rather than expanding an empty array: macOS ships
+# bash 3.2, where `"${next[@]}"` trips `set -u`.
+next=()
+[ -f "$HOME/.gitconfig.local" ] ||
+  next+=("cp dotfiles/git/.gitconfig.local.example ~/.gitconfig.local")
+[ -f "$HOME/.config/opencode/tui.jsonc" ] ||
+  next+=("cp dotfiles/opencode/.config/opencode/tui.jsonc.example ~/.config/opencode/tui.jsonc")
+if [ ${#next[@]} -gt 0 ]; then
+  echo "    Next:"
+  printf '      %s\n' "${next[@]}"
+fi
