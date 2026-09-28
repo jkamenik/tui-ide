@@ -1,6 +1,6 @@
 # tui-ide-ADR-0011: LazyGit as the git client
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0017](0017-lazygit-from-brewfile-or-github-releases.md)
 **Date:** 2026-09-16
 
 ## Context

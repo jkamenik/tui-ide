@@ -1,6 +1,6 @@
 # tui-ide-ADR-0009: Track iTerm2 preferences from a synced plist
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0010](0010-manage-iterm2-plist-in-repo.md)
 **Date:** 2026-09-16
 
 ## Context

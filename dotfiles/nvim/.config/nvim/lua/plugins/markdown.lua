@@ -5,6 +5,14 @@ end
 
 local workspaces = obs_local.workspaces or {}
 
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "markdown",
+  callback = function()
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true
+  end,
+})
+
 local spec = {
   {
     "nvim-treesitter/nvim-treesitter",
@@ -32,6 +40,15 @@ local spec = {
     config = function(_, opts)
       require("render-markdown").setup(opts)
     end,
+  },
+  {
+    "cavanaug/render-markdown-mermaid.nvim",
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      "MeanderingProgrammer/render-markdown.nvim",
+    },
+    build = ":TSUpdate markdown markdown_inline",
+    opts = {},
   },
 }
 

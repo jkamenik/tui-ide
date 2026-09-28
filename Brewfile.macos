@@ -12,4 +12,5 @@ cask "font-meslo-lg-nerd-font"
 # macOS 26/27 auto-denies notification authorization to ad-hoc-signed apps:
 # after `brew install`, re-sign the app with a stable self-signed identity
 # (install.sh) and approve it once under System Settings > Notifications.
+cask "gcloud-cli"
 brew "terminal-notifier"

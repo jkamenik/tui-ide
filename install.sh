@@ -3,7 +3,8 @@
 # Works on macOS (Homebrew) and Linux (Homebrew/Linuxbrew; apt fallback).
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Physical path: the backup guard below compares against realpath output.
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 DOTFILES=(nvim herdr git zsh)
 
@@ -20,7 +21,31 @@ if have brew; then
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update
-  sudo apt-get install -y git curl mosh ripgrep stow jq lazygit
+  sudo apt-get install -y git curl mosh neovim ripgrep stow jq
+  if ! have herdr && [ ! -x "$HOME/.local/bin/herdr" ]; then
+    echo "==> Installing herdr (not in apt) from herdr.dev"
+    curl -fsSL https://herdr.dev/install.sh | sh
+  fi
+  # lazygit has no Debian/Ubuntu package (not in 24.04 "noble", which the
+  # always-on host runs), so apt-get would abort the whole script. Take the
+  # release tarball instead, the same shape as the herdr fallback above.
+  if ! have lazygit && [ ! -x "$HOME/.local/bin/lazygit" ]; then
+    echo "==> Installing lazygit (not in apt) from GitHub releases"
+    case "$(uname -m)" in
+      x86_64) asset_arch=x86_64 ;;
+      aarch64 | arm64) asset_arch=arm64 ;;
+      *) echo "Unsupported architecture for lazygit: $(uname -m)" >&2; exit 1 ;;
+    esac
+    # Resolve latest via the /releases/latest redirect: no API call, so no rate limit.
+    tag="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      https://github.com/jesseduffield/lazygit/releases/latest | sed 's|.*/tag/||')"
+    mkdir -p "$HOME/.local/bin"
+    tmp="$(mktemp -d)"
+    curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/${tag}/lazygit_${tag#v}_linux_${asset_arch}.tar.gz" \
+      | tar -xz -C "$tmp" lazygit
+    install -m 0755 "$tmp/lazygit" "$HOME/.local/bin/lazygit"
+    rm -rf "$tmp"
+  fi
 else
   echo "Need Homebrew or apt-get. Install Homebrew first: https://brew.sh" >&2
   exit 1
@@ -42,16 +67,31 @@ for pkg in "${DOTFILES[@]}"; do
   # Back up real files that stow would refuse to replace.
   while IFS= read -r rel; do
     target="$HOME/$rel"
-    if [ -e "$target" ] && [ ! -L "$target" ]; then
-      mkdir -p "$BACKUP_DIR/$(dirname "$rel")"
-      mv "$target" "$BACKUP_DIR/$rel"
-      echo "    backed up ~/$rel"
+    # Already a stow link, or nothing to replace.
+    if [ ! -e "$target" ] || [ -L "$target" ]; then
+      continue
     fi
+    # Skip anything already resolving into the repo. A folded directory symlink
+    # (e.g. ~/.config/nvim -> dotfiles/nvim/.config/nvim) makes $target the
+    # tracked file itself, and moving it would delete the source of truth.
+    case "$(realpath "$target" 2>/dev/null || true)" in
+      "$REPO_DIR"/*) continue ;;
+    esac
+    mkdir -p "$BACKUP_DIR/$(dirname "$rel")"
+    mv "$target" "$BACKUP_DIR/$rel"
+    echo "    backed up ~/$rel"
   done < <(cd "$REPO_DIR/dotfiles/$pkg" && find . -type f | sed 's|^\./||')
   stow --dir="$REPO_DIR/dotfiles" --target="$HOME" --no-folding "$pkg"
 done
 
 if [ "$os" = "Darwin" ]; then
+  # Register terminal-notifier's helper app with Notification Center.
+  # macOS authorizes notifications per app identity; opening the bundled app
+  # once registers it or permission errors ("Not allowed for this application").
+  if have terminal-notifier; then
+    open "$(brew --prefix)/opt/terminal-notifier/terminal-notifier.app" 2>/dev/null || true
+  fi
+
   if [ "$(defaults read com.googlecode.iterm2 LoadPrefsFromCustomFolder 2>/dev/null || echo 0)" = "1" ]; then
     :
   elif pgrep -x iTerm2 >/dev/null 2>&1; then

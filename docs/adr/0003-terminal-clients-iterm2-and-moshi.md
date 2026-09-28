@@ -31,4 +31,4 @@ We will use iTerm2 on macOS and Moshi on iOS. iTerm2 is installed manually becau
 ## See Also
 
 - [Architecture](../architecture.md)
-- [iTerm2 setup](../../iterm2/README.md)
+- [iTerm2 setup](../../README.md#iterm2-macos)
