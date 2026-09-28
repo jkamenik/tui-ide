@@ -1,5 +1,3 @@
-local ok, obs_local = pcall(require, "obsidian-local")
-
 local spec = {
   { "<leader>e", desc = "Toggle file tree" },
   { "<leader>f", group = "find" },
@@ -11,9 +9,11 @@ local spec = {
   { "<leader>m", group = "markdown" },
   { "<leader>mr", desc = "Toggle render" },
   { "<leader>p", desc = "Command palette" },
+  { "<leader>v", group = "view" },
+  { "<leader>vm", desc = "Toggle minimap" },
 }
 
-if ok and obs_local.workspaces and #obs_local.workspaces > 0 then
+if #require("vault").workspaces() > 0 then
   spec[#spec + 1] = { "<leader>o", group = "obsidian" }
   spec[#spec + 1] = { "<leader>oo", desc = "Switch note" }
   spec[#spec + 1] = { "<leader>on", desc = "New note" }

@@ -1,9 +1,4 @@
-local ok, obs_local = pcall(require, "obsidian-local")
-if not ok then
-  obs_local = {}
-end
-
-local workspaces = obs_local.workspaces or {}
+local workspaces = require("vault").workspaces()
 
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "markdown",
