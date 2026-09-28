@@ -25,7 +25,7 @@ flowchart TB
         Shell["zsh + oh-my-zsh"]
         Mux["herdr"]
         Edit["Neovim"]
-        Tools["mosh, git, gh, ansible, opencode, ripgrep, lazygit, terraform, gcloud"]
+        Tools["mosh, git, git-lfs, gh, ansible, opencode, claude-code, ripgrep, lazygit, terraform, gcloud"]
     end
 
     subgraph Remote["Always-on host - automations repo"]

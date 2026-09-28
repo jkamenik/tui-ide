@@ -14,6 +14,18 @@ os="$(uname -s)"
 
 if have brew; then
   echo "==> Installing toolchain with Homebrew"
+  # Homebrew 7 refuses to load formulae from third-party taps until they are
+  # trusted, so trust the exact tap formulae the Brewfiles use. Trusting the
+  # whole tap would also cover formulae this repo does not install (the
+  # cavanaug/tap-extras tap also ships copilot-api). Additive and idempotent.
+  # Homebrew 6 and older have no `brew trust`, hence the guard. homebrew-core
+  # formulae need no entry and must not be listed: `brew trust` rejects their
+  # unqualified names, which would abort the script under `set -e`.
+  if brew trust --help >/dev/null 2>&1; then
+    for formula in cavanaug/tap-extras/mermaid-ascii hashicorp/tap/terraform; do
+      brew trust --formula "$formula"
+    done
+  fi
   brew bundle --file="$REPO_DIR/Brewfile"
   if [ "$os" = "Darwin" ]; then
     brew bundle --file="$REPO_DIR/Brewfile.macos"
@@ -21,7 +33,7 @@ if have brew; then
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update
-  sudo apt-get install -y git curl mosh neovim ripgrep stow jq
+  sudo apt-get install -y git git-lfs curl mosh neovim ripgrep stow jq
   if ! have herdr && [ ! -x "$HOME/.local/bin/herdr" ]; then
     echo "==> Installing herdr (not in apt) from herdr.dev"
     curl -fsSL https://herdr.dev/install.sh | sh
@@ -46,6 +58,12 @@ elif [ "$os" = "Linux" ] && have apt-get; then
     install -m 0755 "$tmp/lazygit" "$HOME/.local/bin/lazygit"
     rm -rf "$tmp"
   fi
+  # Claude Code ships a native binary with no Debian/Ubuntu package, so take the
+  # official installer, the same shape as the herdr fallback above.
+  if ! have claude && [ ! -x "$HOME/.local/bin/claude" ]; then
+    echo "==> Installing claude-code (not in apt) from claude.ai"
+    curl -fsSL https://claude.ai/install.sh | sh
+  fi
 else
   echo "Need Homebrew or apt-get. Install Homebrew first: https://brew.sh" >&2
   exit 1
@@ -64,6 +82,18 @@ fi
 echo "==> Linking dotfiles"
 mkdir -p "$BACKUP_DIR"
 for pkg in "${DOTFILES[@]}"; do
+  # Move non-regular files out of the package before stowing. The pre-ADR-0014
+  # folded layout let herdr write its sockets straight into the repo, and they
+  # outlived the un-fold. `find -type f` below cannot see them, so stow treats
+  # them as content, then aborts the whole run because $HOME already holds the
+  # live socket. Back them up rather than delete (convention 3): the socket
+  # herdr is actually using lives in $HOME, not in the package.
+  while IFS= read -r rel; do
+    mkdir -p "$BACKUP_DIR/$(dirname "$rel")"
+    mv "$REPO_DIR/dotfiles/$pkg/$rel" "$BACKUP_DIR/$rel"
+    echo "    moved non-regular dotfiles/$pkg/$rel out of the package"
+  done < <(cd "$REPO_DIR/dotfiles/$pkg" && find . ! -type d ! -type f ! -type l | sed 's|^\./||')
+
   # Back up real files that stow would refuse to replace.
   while IFS= read -r rel; do
     target="$HOME/$rel"

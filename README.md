@@ -13,8 +13,8 @@ This is a complete stack:
 
 ## What It Installs
 
-Toolchain via Homebrew (macOS and Linuxbrew): git, gh, ansible, neovim, mosh,
-herdr, opencode, ripgrep, stow, jq, lazygit, terraform.
+Toolchain via Homebrew (macOS and Linuxbrew): git, git-lfs, gh, ansible, neovim,
+mosh, herdr, opencode, claude-code, ripgrep, stow, jq, lazygit, terraform.
 
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
@@ -39,8 +39,12 @@ file that would be overwritten is backed up to
 `~/.dotfiles-backup/<timestamp>/` first; files that resolve back into the
 repository are skipped, so the backup step can never move a tracked file out of
 the tree. Linux without Homebrew falls back to
-apt for the core packages plus Neovim, and installs Herdr from its official
-installer (not in apt).
+apt for the core packages plus Neovim, and installs Herdr, LazyGit, and Claude
+Code from their official installers (none are in apt). Homebrew 7 will not load
+a formula from a third-party tap until it is trusted, so `install.sh` trusts
+the tap formulae the Brewfiles use (`cavanaug/tap-extras/mermaid-ascii` and
+`hashicorp/tap/terraform`, recorded in `~/.homebrew/trust.json`) before running
+`brew bundle`.
 
 ## After Install
 
@@ -121,6 +125,14 @@ Confirm the result is per-file links before trusting it:
 ls -la ~/.config/nvim/   # init.lua should be a symlink, not a real file
 ```
 
+**`stow` reports a conflict on `herdr.sock` or `herdr-client.sock`**: a dead
+socket is sitting inside the stow package
+(`dotfiles/herdr/.config/herdr/`), left over from the folded layout that
+predates `--no-folding`. Re-run `./install.sh`: it moves non-regular files out
+of a package into `~/.dotfiles-backup/<timestamp>/` before stowing, so the
+conflict clears. The socket herdr is actually using lives in `~/.config/herdr/`
+and is never touched.
+
 **Neovim plugins appear missing after a reinstall**: the plugin directory
 (`~/.local/share/nvim/lazy/`) is not managed by stow and is never touched by
 `install.sh`. If plugins vanish, the config is gone, not the plugins — check
@@ -140,4 +152,6 @@ herdr --version
 mosh --version
 stow --version
 lazygit --version
+git lfs version
+claude --version
 ```

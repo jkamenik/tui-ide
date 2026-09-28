@@ -33,7 +33,9 @@ and the developer tools they need. It does not own scheduled execution
    it. Never delete without a backup.
 4. **Never commit machine-specific values.** Use overlay files (`*.local`,
    git-ignored) and provide a `.example`.
-5. **Casks are macOS-only.** Gate them behind `Brewfile.macos`.
+5. **Casks are macOS-only unless they also build on Linuxbrew.** Gate
+   macOS-only casks behind `Brewfile.macos`; a cross-platform cask (`claude-code`)
+   belongs in the shared `Brewfile`.
 6. **Cross-platform first.** Assume macOS and Linux. Note any macOS-only path.
 7. **No `git worktrees`.** The stow symlinks under `$HOME` resolve to the main
    checkout's absolute path, so only main is "live". A worktree cannot serve
@@ -63,4 +65,6 @@ nvim --headless "+lua print('ok')" +q
 herdr --version
 mosh --version
 stow --version
+git lfs version
+claude --version
 ```
