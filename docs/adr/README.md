@@ -13,7 +13,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0002](0002-homebrew-bundle-and-gnu-stow.md) | Homebrew Bundle plus GNU Stow for provisioning | Accepted | 2026-09-16 |
 | [0003](0003-terminal-clients-iterm2-and-moshi.md) | iTerm2 on macOS and Moshi on iOS | Accepted | 2026-09-16 |
 | [0004](0004-herdr-as-multiplexer.md) | herdr as the multiplexer | Accepted | 2026-09-16 |
-| [0005](0005-neovim-as-editor.md) | Neovim as the editor | Accepted | 2026-09-16 |
+| [0005](0005-neovim-as-editor.md) | Neovim as the editor | Superseded by [0018](0018-neovim-as-editor-variable.md) | 2026-09-16 |
 | [0006](0006-mosh-over-tailscale.md) | mosh over Tailscale, OpenSSH for files | Accepted | 2026-09-16 |
 | [0007](0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted | 2026-09-16 |
 | [0008](0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted | 2026-09-16 |
@@ -26,6 +26,9 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0015](0015-run-herdr-server-under-launchd-on-macos.md) | Run the herdr server under launchd on macOS | Accepted | 2026-09-22 |
 | [0016](0016-never-back-up-files-that-resolve-into-the-repo.md) | Never back up files that resolve into the repo | Accepted | 2026-09-27 |
 | [0017](0017-lazygit-from-brewfile-or-github-releases.md) | LazyGit as the git client, from Brewfile or GitHub releases | Accepted | 2026-09-27 |
+| [0018](0018-neovim-as-editor-variable.md) | Neovim as `$EDITOR`, with `vi` aliased to nvim | Accepted | 2026-09-28 |
+| [0019](0019-merge-claude-user-settings.md) | Merge Claude Code user settings instead of stowing them | Accepted | 2026-09-28 |
+| [0020](0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted | 2026-09-28 |
 
 ## Format
 

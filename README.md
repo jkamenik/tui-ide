@@ -14,13 +14,16 @@ This is a complete stack:
 ## What It Installs
 
 Toolchain via Homebrew (macOS and Linuxbrew): git, git-lfs, gh, ansible, neovim,
-mosh, herdr, opencode, claude-code, ripgrep, stow, jq, lazygit, terraform.
+mosh, herdr, opencode, nono, claude-code, ripgrep, stow, jq, lazygit, terraform.
 
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
 
 Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode TUI config is an
-overlay copied from an example.
+overlay copied from an example. Claude Code user settings are merged from a
+tracked template rather than stowed, because the hooks iTerm2 and herdr
+install there are machine-specific and Claude Code has no user-level overlay
+file (see [ADR-0019](docs/adr/0019-merge-claude-user-settings.md)).
 
 iTerm2 preferences are managed directly in the repo at
 `dotfiles/iterm2/.config/iterm2/AppSupport/`; iTerm2's custom preferences folder
@@ -39,12 +42,37 @@ file that would be overwritten is backed up to
 `~/.dotfiles-backup/<timestamp>/` first; files that resolve back into the
 repository are skipped, so the backup step can never move a tracked file out of
 the tree. Linux without Homebrew falls back to
-apt for the core packages plus Neovim, and installs Herdr, LazyGit, and Claude
-Code from their official installers (none are in apt). Homebrew 7 will not load
-a formula from a third-party tap until it is trusted, so `install.sh` trusts
-the tap formulae the Brewfiles use (`cavanaug/tap-extras/mermaid-ascii` and
-`hashicorp/tap/terraform`, recorded in `~/.homebrew/trust.json`) before running
-`brew bundle`.
+apt for the core packages plus Neovim, and installs Herdr, LazyGit, Claude
+Code, and nono from their official installers (none are in apt). Homebrew 7 will
+not load a formula from a third-party tap until it is trusted, so `install.sh`
+trusts the tap formulae the Brewfiles use (`cavanaug/tap-extras/mermaid-ascii`
+and `hashicorp/tap/terraform`, recorded in `~/.homebrew/trust.json`) before
+running `brew bundle`.
+
+## Sandboxed Agents
+
+`opencode` and `claude` run inside [nono](https://nono.sh), which enforces a
+default-deny filesystem allow-list in the kernel (Landlock on Linux, Seatbelt on
+macOS). Credential stores are unreachable from inside — `~/.ssh`, `~/.aws`,
+`~/.config/gcloud`, `~/.config/gh`, and your shell configs. `install.sh` pulls
+each agent's signed capability profile, so there is nothing to configure:
+
+```bash
+opencode        # sandboxed, profile nolabs-ai/opencode
+claude          # sandboxed, profile nolabs-ai/claude
+opencode-yolo   # the real binary, no boundary
+claude-yolo     # the real binary, no boundary
+```
+
+Use the `-yolo` variants when a session needs a path its profile denies. To find
+out what a denial was and grant it properly instead:
+
+```bash
+nono why --path ~/.some/data/dir --op read
+nono profile show nolabs-ai/opencode
+```
+
+See [ADR-0020](docs/adr/0020-sandbox-agent-clis-with-nono.md).
 
 ## After Install
 
@@ -55,7 +83,9 @@ cp dotfiles/git/.gitconfig.local.example ~/.gitconfig.local
 # edit email, signing key, and the 1Password agent path
 ```
 
-For the Obsidian vault workspace, copy the nvim overlay:
+Optional: for an Obsidian vault, copy the nvim overlay. `obsidian.nvim` is
+only loaded when this file exists and its workspace paths are present on disk,
+so skip it if you have no vault — nothing else in the config changes.
 
 ```bash
 cp dotfiles/nvim/.config/nvim/lua/obsidian-local.example.lua \
@@ -153,5 +183,7 @@ mosh --version
 stow --version
 lazygit --version
 git lfs version
+nono --version
+nono list --installed          # nolabs-ai/claude, nolabs-ai/opencode
 claude --version
 ```

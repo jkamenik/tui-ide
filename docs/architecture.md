@@ -25,7 +25,7 @@ flowchart TB
         Shell["zsh + oh-my-zsh"]
         Mux["herdr"]
         Edit["Neovim"]
-        Tools["mosh, git, git-lfs, gh, ansible, opencode, claude-code, ripgrep, lazygit, terraform, gcloud"]
+        Tools["mosh, git, git-lfs, gh, ansible, nono, opencode, claude-code, ripgrep, lazygit, terraform, gcloud"]
     end
 
     subgraph Remote["Always-on host - automations repo"]
@@ -53,22 +53,26 @@ flowchart TB
 | Moshi | iOS terminal | Mosh-native, herdr-integrated; Blink is the fallback |
 | zsh + oh-my-zsh | Shell | Portable across macOS and Linux |
 | herdr | Multiplexer | Server-side sessions; UI theme follows the terminal palette |
-| Neovim | Editor | Human editing surface; agent lives in the opencode TUI |
+| Neovim | Editor | Human editing surface; agent lives in the opencode TUI. `$EDITOR`, and `vi` by alias |
+| nono | Agent sandbox | Kernel-enforced default-deny allow-list (Landlock on Linux, Seatbelt on macOS). Wraps `opencode` and `claude`; `-yolo` variants opt out |
+| Claude Code | Agent CLI | Alternate agent surface; user settings merged from a tracked template, hooks left local |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
 | LazyGit | Git client | TUI launched from Neovim with `<leader>gg` |
 | Terraform, Ansible, gcloud | Cloud & IaC | Provisioning and config management against GCP |
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
-| obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled |
+| obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled. Optional: loaded only when the local overlay names a workspace that exists on disk |
+| mini.map | Minimap | Floating buffer overview on the right, `<leader>vm`; search and diagnostic highlights |
 
 ## Cross-Machine Model
 
 - **Toolchain:** one `Brewfile` for macOS and Linuxbrew; casks isolated in
   `Brewfile.macos`; apt fallback for Linux without Homebrew. Tools the
   distribution does not package install from upstream instead: herdr from
-  `herdr.dev`, LazyGit from its GitHub release tarball into `$HOME/.local/bin`.
-  Each is skipped when the binary is already present.
+  `herdr.dev`, LazyGit from its GitHub release tarball into `$HOME/.local/bin`,
+  nono from its release `.deb`. Each is skipped when the binary is already
+  present.
 - **Dotfiles:** Stow packages map directly onto `$HOME`. Adding a package means
   adding a directory under `dotfiles/` and listing it in `install.sh`. Stow
   runs with `--no-folding` so apps that rewrite their config in place never
@@ -79,7 +83,19 @@ flowchart TB
   git-ignored. `dotfiles/git/.gitconfig` includes `~/.gitconfig.local`, which
   holds identity and the 1Password SSH signing agent path.
 - **Secrets:** the 1Password CLI (`op`) provides credentials. No secret is ever
-  committed.
+  committed. The agent CLIs additionally run with those credentials out of
+  reach: nono denies `~/.ssh`, `~/.aws`, `~/.config/gcloud`, `~/.config/gh`,
+  and the shell configs inside the sandbox. The one exception is the
+  `claude-code` pack, which grants `~/Library/Keychains` read+write because
+  Claude Code keeps its OAuth token in the login keychain.
+- **Agent sandbox:** `opencode` and `claude` are zsh functions that run the real
+  binaries under `nono run` with the profiles from the `nolabs-ai/opencode` and
+  `nolabs-ai/claude` registry packs, which `install.sh` pulls. Capability sets
+  are upstream and signature-verified, not tracked here. `opencode-yolo` and
+  `claude-yolo` are the same binaries with no boundary. Claude Code's own
+  sandbox is off in the tracked settings template, so nono is the only layer
+  and the `dangerouslyDisableSandbox` retry path is closed. See
+  [ADR-0020](adr/0020-sandbox-agent-clis-with-nono.md).
 - **iTerm2 (macOS):** `com.googlecode.iterm2.plist` lives in the repo at
   `dotfiles/iterm2/.config/iterm2/AppSupport/`. `install.sh` enables iTerm2's
   custom preferences folder with `defaults write` when iTerm2 is quit, so GUI
@@ -92,10 +108,12 @@ flowchart TB
 
 1. `install.sh` detects the OS.
 2. `brew bundle` installs the toolchain (casks on macOS only).
-3. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
+3. `nono pull` fetches the agent sandbox profiles, so the first launch does not
+   prompt for a pack install.
+4. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
    that resolve into the repo are skipped.
-4. `stow --no-folding` links the dotfiles into `$HOME`.
-5. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
+5. `stow --no-folding` links the dotfiles into `$HOME`.
+6. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
 
 ## Relationship to Other Repos
 
@@ -114,7 +132,7 @@ Current accepted ADRs. Superseded records are omitted.
 | [0002](adr/0002-homebrew-bundle-and-gnu-stow.md) | Homebrew Bundle plus GNU Stow for provisioning | Accepted |
 | [0003](adr/0003-terminal-clients-iterm2-and-moshi.md) | iTerm2 on macOS and Moshi on iOS | Accepted |
 | [0004](adr/0004-herdr-as-multiplexer.md) | herdr as the multiplexer | Accepted |
-| [0005](adr/0005-neovim-as-editor.md) | Neovim as the editor | Accepted |
+| [0005](adr/0005-neovim-as-editor.md) | Neovim as the editor | Superseded by [0018](adr/0018-neovim-as-editor-variable.md) |
 | [0006](adr/0006-mosh-over-tailscale.md) | mosh over Tailscale, OpenSSH for files | Accepted |
 | [0007](adr/0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted |
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
@@ -126,3 +144,6 @@ Current accepted ADRs. Superseded records are omitted.
 | [0015](adr/0015-run-herdr-server-under-launchd-on-macos.md) | Run the herdr server under launchd on macOS | Accepted |
 | [0016](adr/0016-never-back-up-files-that-resolve-into-the-repo.md) | Never back up files that resolve into the repo | Accepted |
 | [0017](adr/0017-lazygit-from-brewfile-or-github-releases.md) | LazyGit as the git client, from Brewfile or GitHub releases | Accepted |
+| [0018](adr/0018-neovim-as-editor-variable.md) | Neovim as `$EDITOR`, with `vi` aliased to nvim | Accepted |
+| [0019](adr/0019-merge-claude-user-settings.md) | Merge Claude Code user settings instead of stowing them | Accepted |
+| [0020](adr/0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted |
