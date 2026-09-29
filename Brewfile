@@ -12,6 +12,9 @@ brew "opencode"
 # nono is the kernel-enforced sandbox the agent CLIs run under (ADR-0020).
 # Landlock on Linux, Seatbelt on macOS, from one binary.
 brew "nono"
+# devcontainer is the Dev Containers CLI. Homebrew installs it as the npm
+# package @devcontainers/cli, so it brings node in as a dependency.
+brew "devcontainer"
 cask "claude-code"
 brew "ripgrep"
 brew "stow"

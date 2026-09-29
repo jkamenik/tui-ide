@@ -14,7 +14,8 @@ This is a complete stack:
 ## What It Installs
 
 Toolchain via Homebrew (macOS and Linuxbrew): git, git-lfs, gh, ansible, neovim,
-mosh, herdr, opencode, nono, claude-code, ripgrep, stow, jq, lazygit, terraform.
+mosh, herdr, opencode, nono, devcontainer, claude-code, ripgrep, stow, jq,
+lazygit, terraform.
 
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
@@ -215,6 +216,7 @@ stow --version
 lazygit --version
 git lfs version
 nono --version
+devcontainer --version
 nono list --installed          # nolabs-ai/claude, nolabs-ai/opencode
 nono profile list              # tui-ide-agent, and -local when the overlay exists
 claude --version

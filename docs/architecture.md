@@ -25,7 +25,7 @@ flowchart TB
         Shell["zsh + oh-my-zsh"]
         Mux["herdr"]
         Edit["Neovim"]
-        Tools["mosh, git, git-lfs, gh, ansible, nono, opencode, claude-code, ripgrep, lazygit, terraform, gcloud"]
+        Tools["mosh, git, git-lfs, gh, ansible, nono, devcontainer, opencode, claude-code, ripgrep, lazygit, terraform, gcloud"]
     end
 
     subgraph Remote["Always-on host - automations repo"]
@@ -55,6 +55,7 @@ flowchart TB
 | herdr | Multiplexer | Server-side sessions; UI theme follows the terminal palette |
 | Neovim | Editor | Human editing surface; agent lives in the opencode TUI. `$EDITOR`, and `vi` by alias |
 | nono | Agent sandbox | Kernel-enforced default-deny allow-list (Landlock on Linux, Seatbelt on macOS). Wraps `opencode` and `claude`; `-yolo` variants opt out |
+| devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet; how it relates to the nono sandbox is undecided |
 | Claude Code | Agent CLI | Alternate agent surface; user settings merged from a tracked template, hooks left local |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |

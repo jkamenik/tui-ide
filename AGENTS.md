@@ -69,6 +69,7 @@ mosh --version
 stow --version
 git lfs version
 nono --version
+devcontainer --version
 claude --version
 nono profile list              # tui-ide-agent must appear
 ```
