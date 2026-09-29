@@ -29,6 +29,8 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0018](0018-neovim-as-editor-variable.md) | Neovim as `$EDITOR`, with `vi` aliased to nvim | Accepted | 2026-09-28 |
 | [0019](0019-merge-claude-user-settings.md) | Merge Claude Code user settings instead of stowing them | Accepted | 2026-09-28 |
 | [0020](0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted | 2026-09-28 |
+| [0021](0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted | 2026-09-28 |
+| [0022](0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted | 2026-09-28 |
 
 ## Format
 

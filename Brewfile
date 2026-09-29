@@ -9,6 +9,9 @@ brew "neovim"
 brew "mosh"
 brew "herdr"
 brew "opencode"
+# nono is the kernel-enforced sandbox the agent CLIs run under (ADR-0020).
+# Landlock on Linux, Seatbelt on macOS, from one binary.
+brew "nono"
 cask "claude-code"
 brew "ripgrep"
 brew "stow"

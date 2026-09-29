@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "name": "tui-ide-agent",
+    "version": "1.0.0",
+    "description": "opencode sandbox scoped to what tui-ide sessions actually touched",
+    "author": "jkamenik"
+  },
+  "extends": "nolabs-ai/opencode",
+  "groups": {
+    "include": []
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "allow": [
+      "$XDG_CONFIG_HOME/nvim",
+      "$XDG_CONFIG_HOME/herdr",
+      "$XDG_CONFIG_HOME/iterm2",
+      "$HOME/.gitconfig.local"
+    ]
+  },
+  "platform_overrides": {
+    "macos": {
+      "filesystem": {
+        "allow": [
+          "$HOME/Library/Fonts",
+          "$HOME/Library/LaunchAgents"
+        ]
+      }
+    }
+  }
+}

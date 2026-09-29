@@ -18,6 +18,7 @@ and the developer tools they need. It does not own scheduled execution
 | `install.sh` | Bootstrap: OS detect, `brew bundle`, backup, `stow` |
 | `dotfiles/<pkg>/...` | GNU Stow packages mapped onto `$HOME` |
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
+| `dotfiles/nono/...` | nono user profiles; `tui-ide-agent.json` extends the opencode pack with the paths this repo's sessions use, `tui-ide-agent-local.json` is the git-ignored machine overlay ([ADR-0021](docs/adr/0021-derive-nono-profile-from-observed-use.md)) |
 | `dotfiles/claude/...` | Claude Code settings template; tracked but not stowed, `install.sh` merges it into `~/.claude/settings.json` ([ADR-0019](docs/adr/0019-merge-claude-user-settings.md)) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
@@ -69,4 +70,15 @@ stow --version
 git lfs version
 nono --version
 claude --version
+nono profile list              # tui-ide-agent must appear
 ```
+
+Re-derive the tracked nono grants from observed agent use rather than guessing:
+read the `part` table in `~/.local/share/opencode/opencode.db` for the files
+touched and binaries invoked, then check each candidate against the pack with
+`nono why -a "$PWD" --profile tui-ide-agent --path <p> --op read` before adding
+it. See [ADR-0021](docs/adr/0021-derive-nono-profile-from-observed-use.md).
+
+The agent wrappers set `HERDR_AGENT` on the `nono` command because `nono run`
+supervises rather than execs; without it herdr cannot see the agent and it
+disappears from the agents view ([ADR-0022](docs/adr/0022-label-sandboxed-agent-for-herdr.md)).

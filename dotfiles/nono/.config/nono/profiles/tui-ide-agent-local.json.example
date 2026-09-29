@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "name": "tui-ide-agent-local",
+    "description": "Machine-specific additions to tui-ide-agent. Copy to tui-ide-agent-local.json."
+  },
+  "extends": "tui-ide-agent",
+  "groups": {
+    "include": []
+  },
+  "filesystem": {
+    "allow": [
+      "$HOME/github.com/jkamenik/second-brain"
+    ]
+  }
+}
