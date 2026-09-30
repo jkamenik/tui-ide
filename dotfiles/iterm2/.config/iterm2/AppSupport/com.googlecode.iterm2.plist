@@ -28,6 +28,33 @@
 	<string>https://api.openai.com/v1/responses</string>
 	<key>AllowClipboardAccess</key>
 	<true/>
+	<key>CodeReviewSavedPrompts</key>
+	<data>
+	W3sibmFtZSI6IkRlZmF1bHQiLCJ1dWlkIjoiODQ1NUExNTMtMzczRC00NTMyLUE0QUQt
+	M0Y2NkQ5RTY2NUZDIiwidGV4dCI6IlJldmlldyB0aGUgcGVuZGluZyBjaGFuZ2VzIGlu
+	IHRoaXMgcmVwby4gRmxhZyBpc3N1ZXMgYSBjYXJlZnVsIG1haW50YWluZXIgd291bGQg
+	YmxvY2sgb24gYmVmb3JlIG1lcmdlLCBpbiByb3VnaGx5IHRoaXMgb3JkZXI6XG4gIDEu
+	IENvcnJlY3RuZXNzIOKAlCBsb2dpYyBlcnJvcnMsIGJyb2tlbiBpbnZhcmlhbnRzLCBt
+	aXNzZWQgZWRnZSBjYXNlcywgb2ZmLWJ5LW9uZSwgcmFjZXMsIGxpZmV0aW1lXC9tZW1v
+	cnkgYnVncywgZXJyb3IgcGF0aHMgdGhhdCBzd2FsbG93IGZhaWx1cmVzLlxuICAyLiBT
+	ZWN1cml0eSDigJQgaW5qZWN0aW9uLCBhdXRoblwvYXV0aHogbWlzdGFrZXMsIHNlY3Jl
+	dCBoYW5kbGluZywgdW5zYWZlIGRlc2VyaWFsaXphdGlvbiwgdW5zYWZlIGRlZmF1bHRz
+	LCBUT0NUT1UuXG4gIDMuIFJlbGlhYmlsaXR5ICYgcGVyZm9ybWFuY2Ug4oCUIGJsb2Nr
+	aW5nIHRoZSB3cm9uZyB0aHJlYWQsIHVuYm91bmRlZCByZXNvdXJjZSB1c2UsIGFjY2lk
+	ZW50YWwgTyhOwrIpLCByZXRyaWVzIHdpdGhvdXQgYmFja29mZiwgc2lsZW50IGZhaWx1
+	cmUgcGF0aHMuXG4gIDQuIENvbnRyYWN0IHJpc2sg4oCUIGJlaGF2aW9yIGNoYW5nZXMg
+	Y2FsbGVycyByZWx5IG9uLCBzaWxlbnRseSBjaGFuZ2VkIGRlZmF1bHRzLCBicm9rZW4g
+	YmFja3dhcmQgY29tcGF0aWJpbGl0eSwgbWlzc2luZyBtaWdyYXRpb25zLlxuXG5Gb3Ig
+	ZWFjaCBmaW5kaW5nIGNpdGUgYGZpbGU6bGluZWAsIGV4cGxhaW4gKndoeSogaXQgaXMg
+	d3JvbmcgKG5vdCB3aGF0IHRoZSBjb2RlIGRvZXMpLCBhbmQgcHJvcG9zZSBhIGNvbmNy
+	ZXRlIGZpeCB3aGVuIG9uZSBpcyBvYnZpb3VzLiBCZSBjYWxpYnJhdGVkOiBpZiBhIGZp
+	bmRpbmcgaXMgbm90IGhpZ2gtY29uZmlkZW5jZSwgc2F5IHNvIG9yIHNraXAgaXQuIFZl
+	cmlmeSBjbGFpbXMgYWdhaW5zdCB0aGUgYWN0dWFsIGNvZGUgcmF0aGVyIHRoYW4gaW5m
+	ZXJyaW5nIGZyb20gbmFtZXMuXG5cblNraXAgcHVyZSBzdHlsZSwgZm9ybWF0dGluZywg
+	bmFtaW5nLCBhbmQgYW55dGhpbmcgYSBsaW50ZXIgb3IgQ0kgYWxyZWFkeSBlbmZvcmNl
+	cy5cblxuSWYgeW91IGZpbmQgbm90aGluZyB3b3J0aCBmaXhpbmcsIHNheSBzbyBwbGFp
+	bmx5LiJ9XQ==
+	</data>
 	<key>Custom Color Presets</key>
 	<dict>
 		<key>Warm Burnout Dark</key>
@@ -689,6 +716,8 @@
 	</dict>
 	<key>Default Bookmark Guid</key>
 	<string>1529711A-EE12-4D86-8E90-8DB5AE0EB23A</string>
+	<key>EnableAPIServer</key>
+	<true/>
 	<key>HapticFeedbackForEsc</key>
 	<false/>
 	<key>HotkeyMigratedFromSingleToMulti</key>
@@ -1049,11 +1078,11 @@
 					<key>Action</key>
 					<integer>11</integer>
 					<key>Apply Mode</key>
-					<integer>0</integer>
+					<integer>1</integer>
 					<key>Escaping</key>
 					<integer>2</integer>
 					<key>Text</key>
-					<string>0x1b 0x0d</string>
+					<string>0x1b 0x5b 0x31 0x33 0x3b 0x32 0x75</string>
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
@@ -1211,10 +1240,45 @@
 	<true/>
 	<key>TmuxSyncClipboard</key>
 	<true/>
+	<key>ToolbeltTools</key>
+	<array>
+		<string>Session Status</string>
+	</array>
 	<key>UseRecommendedAIModel</key>
 	<false/>
 	<key>VisualIndicatorForEsc</key>
 	<false/>
+	<key>Workgroups</key>
+	<data>
+	W3sibmFtZSI6IkNsYXVkZSBDb2RlIiwic2Vzc2lvbnMiOlt7ImRpc3BsYXlOYW1lIjoi
+	Q2hhdCIsInRvb2xiYXJJdGVtcyI6W3sia2luZCI6Im1vZGVTd2l0Y2hlciJ9LHsia2lu
+	ZCI6ImdpdFN0YXR1cyJ9LHsia2luZCI6ImF1dG9SZXF1ZXN0UmV2aWV3V2hlbklkbGUi
+	fV0sIm1vZGUiOiJyZWd1bGFyIiwicGVyRmlsZUNvbW1hbmQiOiIiLCJraW5kIjp7Imtp
+	bmQiOiJyb290In0sInVuaXF1ZUlkZW50aWZpZXIiOiJidWlsdGluLmNsYXVkZUNvZGUu
+	bWFpbiIsImNvbW1hbmQiOiIiLCJ1cmxTdHJpbmciOiIifSx7InBhcmVudElEIjoiYnVp
+	bHRpbi5jbGF1ZGVDb2RlLm1haW4iLCJkaXNwbGF5TmFtZSI6IkRpZmYiLCJ0b29sYmFy
+	SXRlbXMiOlt7ImtpbmQiOiJtb2RlU3dpdGNoZXIifSx7ImtpbmQiOiJjaGFuZ2VkRmls
+	ZVNlbGVjdG9yIn0seyJraW5kIjoiZ2l0QmFzZVNlbGVjdG9yIn0seyJiYWNrU2hvcnRj
+	dXQiOnsic2VyaWFsaXplZCI6IjB4ZjcwMi0weDM0MDAwMC0weDdiIn0sImZvcndhcmRT
+	aG9ydGN1dCI6eyJzZXJpYWxpemVkIjoiMHhmNzAzLTB4MzQwMDAwLTB4N2MifSwicmVs
+	b2FkU2hvcnRjdXQiOnsic2VyaWFsaXplZCI6IjB4NzItMHgxMDAwMDAtMHhmIn0sImtp
+	bmQiOiJuYXZpZ2F0aW9uIn1dLCJtb2RlIjoiZGlmZiIsInBlckZpbGVDb21tYW5kIjoi
+	Z2l0IGRpZmZ0b29sIC15IC14IHZpbWRpZmYgXFwoZ2l0QmFzZSkgLS0gXFwoZmlsZSki
+	LCJraW5kIjp7ImtpbmQiOiJwZWVyIn0sInVuaXF1ZUlkZW50aWZpZXIiOiJidWlsdGlu
+	LmNsYXVkZUNvZGUuZGlmZiIsImNvbW1hbmQiOiJnaXQgZGlmZnRvb2wgLXkgLXggdmlt
+	ZGlmZiBcXChnaXRCYXNlKSIsInVybFN0cmluZyI6IiJ9LHsicGFyZW50SUQiOiJidWls
+	dGluLmNsYXVkZUNvZGUubWFpbiIsImRpc3BsYXlOYW1lIjoiQ29kZSBSZXZpZXciLCJ0
+	b29sYmFySXRlbXMiOlt7ImtpbmQiOiJtb2RlU3dpdGNoZXIifSx7ImtpbmQiOiJyZWxv
+	YWQiLCJzaG9ydGN1dCI6eyJzZXJpYWxpemVkIjoiMHg3Mi0weDEwMDAwMC0weGYifX0s
+	eyJraW5kIjoiYXV0b1NlbmRDbGlwcGluZ3NXaGVuSWRsZSJ9XSwibW9kZSI6ImNvZGVS
+	ZXZpZXciLCJjb21tYW5kIjoiY2xhdWRlIFxcKGNvZGVSZXZpZXdQcm9tcHQpIC0tYXBw
+	ZW5kLXN5c3RlbS1wcm9tcHQtZmlsZSAnXFwoY29kZVJldmlld1N5c3RlbVByb21wdEZp
+	bGUpJyAtLXNldHRpbmdzICdcXChpdGVybTIuYXBwQnVuZGxlUGF0aClcL0NvbnRlbnRz
+	XC9SZXNvdXJjZXNcL2NvZGUtcmV2aWV3LXNldHRpbmdzLnR4dCciLCJwZXJGaWxlQ29t
+	bWFuZCI6IiIsInVuaXF1ZUlkZW50aWZpZXIiOiJidWlsdGluLmNsYXVkZUNvZGUucmV2
+	aWV3Iiwia2luZCI6eyJraW5kIjoicGVlciJ9LCJ1cmxTdHJpbmciOiIifV0sInVuaXF1
+	ZUlkZW50aWZpZXIiOiJidWlsdGluLmNsYXVkZUNvZGUifV0=
+	</data>
 	<key>findMode_iTerm</key>
 	<integer>0</integer>
 </dict>

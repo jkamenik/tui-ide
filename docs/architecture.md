@@ -25,7 +25,7 @@ flowchart TB
         Shell["zsh + oh-my-zsh"]
         Mux["herdr"]
         Edit["Neovim"]
-        Tools["mosh, git, git-lfs, gh, ansible, nono, opencode, claude-code, ripgrep, lazygit, terraform, gcloud"]
+        Tools["mosh, git, git-lfs, gh, ansible, nono, devcontainer, opencode, claude-code, ripgrep, lazygit, terraform, gcloud"]
     end
 
     subgraph Remote["Always-on host - automations repo"]
@@ -55,6 +55,7 @@ flowchart TB
 | herdr | Multiplexer | Server-side sessions; UI theme follows the terminal palette |
 | Neovim | Editor | Human editing surface; agent lives in the opencode TUI. `$EDITOR`, and `vi` by alias |
 | nono | Agent sandbox | Kernel-enforced default-deny allow-list (Landlock on Linux, Seatbelt on macOS). Wraps `opencode` and `claude`; `-yolo` variants opt out |
+| devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet; how it relates to the nono sandbox is undecided |
 | Claude Code | Agent CLI | Alternate agent surface; user settings merged from a tracked template, hooks left local |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
@@ -91,11 +92,21 @@ flowchart TB
 - **Agent sandbox:** `opencode` and `claude` are zsh functions that run the real
   binaries under `nono run` with the profiles from the `nolabs-ai/opencode` and
   `nolabs-ai/claude` registry packs, which `install.sh` pulls. Capability sets
-  are upstream and signature-verified, not tracked here. `opencode-yolo` and
-  `claude-yolo` are the same binaries with no boundary. Claude Code's own
-  sandbox is off in the tracked settings template, so nono is the only layer
-  and the `dangerouslyDisableSandbox` retry path is closed. See
-  [ADR-0020](adr/0020-sandbox-agent-clis-with-nono.md).
+  are upstream and signature-verified, not tracked here. `opencode` additionally
+  layers the tracked `tui-ide-agent` profile from `dotfiles/nono`, which extends
+  the pack with the directories this repo's agent sessions actually used
+  (`~/.config/{nvim,herdr,iterm2}`, plus `~/Library/{Fonts,LaunchAgents}` on
+  macOS); machine-specific paths such as the sibling `second-brain` repo go in a
+  git-ignored `tui-ide-agent-local.json` overlay, and the wrapper prefers the
+  overlay when it exists. `opencode-yolo` and `claude-yolo` are the same
+  binaries with no boundary. Because `nono run` supervises rather than execs,
+  the wrapper also sets `HERDR_AGENT` on the `nono` command so herdr can still
+  identify the agent behind the wrapper. Claude Code's own sandbox is off in the
+  tracked settings template, so nono is the only layer and the
+  `dangerouslyDisableSandbox` retry path is closed. See
+  [ADR-0020](adr/0020-sandbox-agent-clis-with-nono.md),
+  [ADR-0021](adr/0021-derive-nono-profile-from-observed-use.md), and
+  [ADR-0022](adr/0022-label-sandboxed-agent-for-herdr.md).
 - **iTerm2 (macOS):** `com.googlecode.iterm2.plist` lives in the repo at
   `dotfiles/iterm2/.config/iterm2/AppSupport/`. `install.sh` enables iTerm2's
   custom preferences folder with `defaults write` when iTerm2 is quit, so GUI
@@ -155,3 +166,5 @@ Current accepted ADRs. Superseded records are omitted.
 | [0018](adr/0018-neovim-as-editor-variable.md) | Neovim as `$EDITOR`, with `vi` aliased to nvim | Accepted |
 | [0019](adr/0019-merge-claude-user-settings.md) | Merge Claude Code user settings instead of stowing them | Accepted |
 | [0020](adr/0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted |
+| [0021](adr/0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted |
+| [0022](adr/0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted |

@@ -136,8 +136,10 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 #
 # Each agent's capability set comes from a signed registry pack that
 # `install.sh` pulls, so these wrappers only pick the profile and share the cwd.
-# Both profiles already declare a read+write workdir; --allow-cwd takes that
-# level rather than prompting on every launch.
+# `opencode` additionally uses a tracked profile in `dotfiles/nono` that adds the
+# paths this repo's sessions actually needed on top of the pack. Both profiles
+# already declare a read+write workdir; --allow-cwd takes that level rather than
+# prompting on every launch.
 #
 # `opencode-yolo` and `claude-yolo` are the same binaries with no boundary at
 # all, for a session that needs a path its profile denies. Reach for them
@@ -146,6 +148,13 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 nono_agent() {
   local profile="$1" agent="$2"
   shift 2
+
+  # A tracked profile is paired with a git-ignored <base>.local.json overlay
+  # that nono resolves through `extends`. Prefer the overlay when present, so
+  # machine-specific grants never need a repo change. The name is matched
+  # literally, so `nolabs-ai/claude` never picks up an overlay.
+  local profiles="${XDG_CONFIG_HOME:-$HOME/.config}/nono/profiles"
+  [[ -f "$profiles/$profile.local.json" ]] && profile="$profile.local"
 
   # Agents spawn tools with posix_spawnp(), which walks $PATH and gives up at
   # the first entry it cannot read (EPERM, not ENOENT, so the search does not
@@ -164,11 +173,58 @@ nono_agent() {
     (( ${path_read[(Ie)$dir]} == 0 )) && path_read+=(--read "$dir")
   done
 
+  # opencode resolves its own config by walking from the workdir up to the
+  # filesystem root, and every ancestor on the way is denied, because a grant
+  # covers the directory but not the directories leading to it. Left alone, a
+  # denial outside the pack's suppress_save_prompt makes nono open a post-exit
+  # review of every denied path, and write the result unattended when there is
+  # no TTY to ask. The suggestion for that walk is read on /System, /Users, $HOME,
+  # and $XDG_CONFIG_HOME, which would hand the agent the whole config tree in
+  # exchange for a startup probe. A suggested grant that broad is never the right
+  # answer, so suppress the review for it. Only ancestors of the workdir are
+  # listed, never the workdir's own children, so a genuinely new directory still
+  # prompts. Stop below the root, which would suppress everything.
+  local -a suppress
+  local ancestor="${PWD:A:h}"
+  while [[ -n "$ancestor" && "$ancestor" != / ]]; do
+    suppress+=(--suppress-save-prompt "$ancestor")
+    ancestor="${ancestor:h}"
+  done
+
+  # The walk reaches the XDG config dir and nono's own config on its way to a
+  # real path, and macOS tools probe /System for the libraries /usr already
+  # covers. Suppressing the review for those is the same argument. The remedy
+  # for a path a session genuinely needs stays `nono why` plus a profile edit,
+  # or the -yolo variant, neither of which depends on this prompt.
+  local xdg_config="${XDG_CONFIG_HOME:-$HOME/.config}"
+  local -a structural
+  structural=("$xdg_config" "$xdg_config/nono")
+  [[ -d /System ]] && structural+=(/System)
+  local dir
+  for dir in $structural; do
+    # (Ie) gives the last matching subscript, 0 when absent, so an entry the
+    # ancestor walk already added is not repeated.
+    if [[ -d "$dir" && ${suppress[(Ie)$dir]} == 0 ]]; then
+      suppress+=(--suppress-save-prompt "$dir")
+    fi
+  done
+
+
   # An empty path_read expands to nothing, so the flags below stay well formed.
-  command nono run --profile "$profile" --allow-cwd "${path_read[@]}" -- "$agent" "$@"
+  #
+  # `nono run` forks a supervisor instead of exec'ing, so the pane's foreground
+  # process is `nono` and herdr cannot see the agent behind the wrapper: the
+  # agent drops out of the agents view and stops raising notifications. HERDR_AGENT
+  # tells herdr which agent screen manifest the foreground process really is, and
+  # it has to be set on the wrapper command rather than exported, because herdr
+  # reads it from the process it can see. Both binaries are named after their
+  # herdr agent label, so the agent name is the hint. See the "VMs and sandbox
+  # wrappers" section of the herdr docs.
+  HERDR_AGENT="$agent" command nono run --profile "$profile" --allow-cwd \
+    "${path_read[@]}" "${suppress[@]}" -- "$agent" "$@"
 }
 
-opencode() { nono_agent nolabs-ai/opencode opencode "$@" }
+opencode() { nono_agent tui-ide-agent opencode "$@" }
 claude() { nono_agent nolabs-ai/claude claude "$@" }
 
 # `command` skips this shell's function, so these reach the real binary.

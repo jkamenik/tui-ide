@@ -14,7 +14,8 @@ This is a complete stack:
 ## What It Installs
 
 Toolchain via Homebrew (macOS and Linuxbrew): git, git-lfs, gh, ansible, neovim,
-mosh, herdr, opencode, nono, claude-code, ripgrep, stow, jq, lazygit, terraform.
+mosh, herdr, opencode, nono, devcontainer, claude-code, ripgrep, stow, jq,
+lazygit, terraform.
 
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
@@ -61,10 +62,35 @@ macOS). Credential stores are unreachable from inside — `~/.ssh`, `~/.aws`,
 each agent's signed capability profile, so there is nothing to configure:
 
 ```bash
-opencode        # sandboxed, profile nolabs-ai/opencode
+opencode        # sandboxed, profile tui-ide-agent (extends the opencode pack)
 claude          # sandboxed, profile nolabs-ai/claude
 opencode-yolo   # the real binary, no boundary
 claude-yolo     # the real binary, no boundary
+```
+
+`opencode` layers a tracked profile on top of the signed pack, adding only the
+directories this repo's agent sessions actually used — `~/.config/nvim`,
+`~/.config/herdr`, `~/.config/iterm2`, and on macOS `~/Library/Fonts` and
+`~/Library/LaunchAgents`. Every binary those sessions invoked was already allowed
+by the pack, so the profile grants no executables.
+
+Machine-specific paths belong in the git-ignored overlay next to it. Copy the
+example, then let `install.sh` or stow link it:
+
+```bash
+cp dotfiles/nono/.config/nono/profiles/tui-ide-agent-local.json.example \
+   dotfiles/nono/.config/nono/profiles/tui-ide-agent-local.json
+```
+
+The wrapper prefers `tui-ide-agent-local` whenever that file exists, so the
+overlay needs no repo change. To re-derive the tracked grants from what the
+agent has actually done, read the tool calls out of opencode's database and check
+each candidate against the pack before granting it:
+
+```bash
+sqlite3 ~/.local/share/opencode/opencode.db \
+  "SELECT json_extract(data,'\$.state.input.command') FROM part
+   WHERE json_extract(data,'\$.type')='tool' AND json_extract(data,'\$.tool')='bash';"
 ```
 
 Use the `-yolo` variants when a session needs a path its profile denies. To find
@@ -72,10 +98,16 @@ out what a denial was and grant it properly instead:
 
 ```bash
 nono why --path ~/.some/data/dir --op read
-nono profile show nolabs-ai/opencode
+nono why -a "$PWD" --profile tui-ide-agent --path ~/.some/data/dir --op read
+nono profile show tui-ide-agent
 ```
 
-See [ADR-0020](docs/adr/0020-sandbox-agent-clis-with-nono.md).
+The `-a "$PWD"` in the second form matters: it reproduces the `--allow-cwd` the
+wrapper passes, and without it `nono why` reports the workdir itself as denied.
+
+See [ADR-0020](docs/adr/0020-sandbox-agent-clis-with-nono.md),
+[ADR-0021](docs/adr/0021-derive-nono-profile-from-observed-use.md), and
+[ADR-0022](docs/adr/0022-label-sandboxed-agent-for-herdr.md).
 
 ## After Install
 
@@ -185,6 +217,8 @@ stow --version
 lazygit --version
 git lfs version
 nono --version
+devcontainer --version
 nono list --installed          # nolabs-ai/claude, nolabs-ai/opencode
+nono profile list              # tui-ide-agent, and -local when the overlay exists
 claude --version
 ```

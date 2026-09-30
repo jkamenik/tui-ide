@@ -3,6 +3,12 @@
 *.local
 obsidian-local.lua
 
+# Personal opencode config for this repo. opencode's filename is fixed, so the
+# *.local convention above cannot apply; ignore the real names at the root only,
+# so a tracked opencode.json in a nested project is unaffected.
+/opencode.json
+/opencode.jsonc
+
 # herdr runtime state (rewritten in place, replaces stow links)
 dotfiles/herdr/.config/herdr/.plugins.lock
 dotfiles/herdr/.config/herdr/herdr-client.log
