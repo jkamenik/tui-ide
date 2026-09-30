@@ -67,7 +67,15 @@ elif [ "$os" = "Linux" ] && have apt-get; then
   # official installer, the same shape as the herdr fallback above.
   if ! have claude && [ ! -x "$HOME/.local/bin/claude" ]; then
     echo "==> Installing claude-code (not in apt) from claude.ai"
-    curl -fsSL https://claude.ai/install.sh | sh
+    # bash, not sh: the upstream installer is #!/bin/bash and its argument check uses
+    # [[ ... =~ ... ]], which dash (Ubuntu's /bin/sh) cannot parse -- it aborts with
+    # 'Syntax error: "(" unexpected' before installing anything.
+    # CLAUDE_INSTALL_ALLOW_SUDO: the installer refuses to run under sudo, because
+    # sudo normally rewrites HOME to /root and leaves 'claude' off the user's PATH.
+    # That is not the case here -- this script is invoked with HOME already pointed
+    # at the target user, so the binary lands in the right home. The guard is
+    # acknowledged deliberately rather than bypassed by accident.
+    curl -fsSL https://claude.ai/install.sh | CLAUDE_INSTALL_ALLOW_SUDO=1 bash
   fi
   # nono is the sandbox the agent CLIs run under (ADR-0020). It is not in apt
   # either, but upstream ships a release .deb per architecture whose only
