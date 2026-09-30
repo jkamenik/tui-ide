@@ -1,6 +1,6 @@
 # tui-ide-ADR-0005: Neovim as the editor
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0018](0018-neovim-as-editor-variable.md)
 **Date:** 2026-09-16
 
 ## Context

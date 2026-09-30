@@ -143,7 +143,8 @@ flowchart TB
 
 ## Decisions
 
-Current accepted ADRs. Superseded records are omitted.
+Every ADR with its current status. Superseded records are kept and name the
+record that replaced them.
 
 | ID | Title | Status |
 |----|-------|--------|
@@ -155,6 +156,7 @@ Current accepted ADRs. Superseded records are omitted.
 | [0006](adr/0006-mosh-over-tailscale.md) | mosh over Tailscale, OpenSSH for files | Accepted |
 | [0007](adr/0007-agent-surface-in-herdr-pane.md) | Agent surface is the opencode TUI in a herdr pane | Accepted |
 | [0008](adr/0008-local-overlay-for-sensitive-values.md) | Overlay files for machine-specific values | Accepted |
+| [0009](adr/0009-track-iterm2-preferences.md) | Track iTerm2 preferences from a synced plist | Superseded by [0010](adr/0010-manage-iterm2-plist-in-repo.md) |
 | [0010](adr/0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted |
 | [0011](adr/0011-lazygit-as-git-client.md) | LazyGit as the git client | Superseded by [0017](adr/0017-lazygit-from-brewfile-or-github-releases.md) |
 | [0012](adr/0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted |
@@ -168,3 +170,4 @@ Current accepted ADRs. Superseded records are omitted.
 | [0020](adr/0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted |
 | [0021](adr/0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted |
 | [0022](adr/0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted |
+| [0023](adr/0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Accepted |
