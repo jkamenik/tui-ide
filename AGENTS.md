@@ -53,6 +53,9 @@ and the developer tools they need. It does not own scheduled execution
 3. Verify with the commands in `README.md`.
 4. When behavior changes, update `docs/architecture.md` and add or supersede an
    ADR.
+5. Commit and push. A change is not finished until it is on `origin/main`; do
+   not leave work uncommitted. Match the message style in `git log`, and keep
+   unrelated changes in separate commits.
 
 ## Out Of Scope
 
