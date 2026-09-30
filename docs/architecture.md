@@ -102,7 +102,9 @@ flowchart TB
   changes land in the working tree. It is not stowed.
 - **Colors:** the iTerm2 preset ("Warm Burnout Dark") is the source of truth;
   herdr sets `theme.name = "terminal"` and opencode sets `"theme": "system"` in
-  its local `tui.jsonc`, so both render from the terminal palette.
+  its local `tui.jsonc`, so both render from the terminal palette. opencode's
+  file is machine-local, so `install.sh` seeds it from a tracked example rather
+  than stowing it ([ADR-0023](adr/0023-seed-the-opencode-tui-config.md)).
 
 ## Install Flow
 
@@ -113,7 +115,13 @@ flowchart TB
 4. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
    that resolve into the repo are skipped.
 5. `stow --no-folding` links the dotfiles into `$HOME`.
-6. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
+6. Two files that cannot be linked are reconciled instead: `~/.claude/settings.json`
+   is deep-merged from a tracked template
+   ([ADR-0019](adr/0019-merge-claude-user-settings.md)), and
+   `~/.config/opencode/tui.jsonc` is copied from a tracked example when it is
+   missing ([ADR-0023](adr/0023-seed-the-opencode-tui-config.md)). Neither
+   overwrites a file that already exists.
+7. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
 
 ## Relationship to Other Repos
 

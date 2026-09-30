@@ -19,11 +19,14 @@ mosh, herdr, opencode, nono, claude-code, ripgrep, stow, jq, lazygit, terraform.
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
 
-Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode TUI config is an
-overlay copied from an example. Claude Code user settings are merged from a
-tracked template rather than stowed, because the hooks iTerm2 and herdr
-install there are machine-specific and Claude Code has no user-level overlay
-file (see [ADR-0019](docs/adr/0019-merge-claude-user-settings.md)).
+Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode TUI config is
+machine-local, so `install.sh` seeds it from a tracked example on a fresh
+machine instead of linking it (see
+[ADR-0023](docs/adr/0023-seed-the-opencode-tui-config.md)). Claude Code user
+settings are merged from a tracked template rather than stowed, because the
+hooks iTerm2 and herdr install there are machine-specific and Claude Code has
+no user-level overlay file (see
+[ADR-0019](docs/adr/0019-merge-claude-user-settings.md)).
 
 iTerm2 preferences are managed directly in the repo at
 `dotfiles/iterm2/.config/iterm2/AppSupport/`; iTerm2's custom preferences folder
@@ -93,13 +96,11 @@ cp dotfiles/nvim/.config/nvim/lua/obsidian-local.example.lua \
 # edit the vault path (e.g. ~/github.com/jkamenik/second-brain)
 ```
 
-For the opencode TUI theme, copy the config overlay:
-
-```bash
-cp dotfiles/opencode/.config/opencode/tui.jsonc.example \
-  ~/.config/opencode/tui.jsonc
-# theme "system" follows the terminal palette; add the herdr plugin if used
-```
+The opencode TUI config needs no step: `install.sh` copies
+`dotfiles/opencode/.config/opencode/tui.jsonc.example` to
+`~/.config/opencode/tui.jsonc` when the file is missing, so `"theme": "system"`
+follows the terminal palette. It is machine-local rather than linked, so edit
+it directly to add the herdr session plugin.
 
 Then finish the iTerm2 setup:
 

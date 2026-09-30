@@ -21,7 +21,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0010](0010-manage-iterm2-plist-in-repo.md) | Manage the iTerm2 plist in the repo directory | Accepted | 2026-09-16 |
 | [0011](0011-lazygit-as-git-client.md) | LazyGit as the git client | Superseded by [0017](0017-lazygit-from-brewfile-or-github-releases.md) | 2026-09-16 |
 | [0012](0012-obsidian-compatible-markdown-editing.md) | Obsidian-compatible Markdown editing | Accepted | 2026-09-17 |
-| [0013](0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted | 2026-09-22 |
+| [0013](0013-apply-color-scheme-on-fresh-machine.md) | Apply the tracked color scheme on a fresh machine | Accepted; opencode clause superseded by [0023](0023-seed-the-opencode-tui-config.md) | 2026-09-22 |
 | [0014](0014-stow-dotfiles-without-folding.md) | Stow dotfiles without folding | Accepted | 2026-09-22 |
 | [0015](0015-run-herdr-server-under-launchd-on-macos.md) | Run the herdr server under launchd on macOS | Accepted | 2026-09-22 |
 | [0016](0016-never-back-up-files-that-resolve-into-the-repo.md) | Never back up files that resolve into the repo | Accepted | 2026-09-27 |
@@ -29,6 +29,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0018](0018-neovim-as-editor-variable.md) | Neovim as `$EDITOR`, with `vi` aliased to nvim | Accepted | 2026-09-28 |
 | [0019](0019-merge-claude-user-settings.md) | Merge Claude Code user settings instead of stowing them | Accepted | 2026-09-28 |
 | [0020](0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted | 2026-09-28 |
+| [0023](0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Accepted | 2026-09-28 |
 
 ## Format
 

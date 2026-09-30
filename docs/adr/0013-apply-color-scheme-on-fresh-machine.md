@@ -2,6 +2,9 @@
 
 **Status:** Accepted
 **Date:** 2026-09-22
+**Partially superseded:** the opencode TUI config clause, by
+[ADR-0023](0023-seed-the-opencode-tui-config.md). The iTerm2 and herdr clauses
+stand.
 
 ## Context
 

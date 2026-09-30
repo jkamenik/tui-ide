@@ -191,6 +191,27 @@ else
   echo "==> jq is missing; leaving ~/.claude/settings.json untouched" >&2
 fi
 
+# The opencode TUI config is machine-local: it carries the herdr session plugin
+# path, so convention 4 forbids tracking it and a stow link would put that path
+# in the repo (ADR-0023). The example is tracked and the real file is copied out
+# of it on a fresh machine, the same shape as the Claude Code template above.
+# Unlike that file this one is not merged: it is JSONC, and the comment lines
+# the example uses to document itself are a parse error for `jq`. So the copy
+# happens once and the file is then the user's, which is what the
+# `.gitconfig.local` overlay already is. A file that is already there is never
+# touched, so re-running install.sh cannot drop a local plugin or theme.
+opencode_tui="$HOME/.config/opencode/tui.jsonc"
+# -L is tested before -f: -f follows symlinks, so a link to a file that is
+# missing would read as "no file" and get overwritten.
+if [ -L "$opencode_tui" ]; then
+  echo "==> ~/.config/opencode/tui.jsonc is a link; leaving it alone (see ADR-0023)"
+elif [ ! -f "$opencode_tui" ]; then
+  mkdir -p "$HOME/.config/opencode"
+  cp "$REPO_DIR/dotfiles/opencode/.config/opencode/tui.jsonc.example" "$opencode_tui"
+  echo "==> Installed the opencode TUI config from dotfiles/opencode"
+  echo "    Edit ~/.config/opencode/tui.jsonc for machine-local values (the herdr session plugin, for example)"
+fi
+
 if [ "$os" = "Darwin" ]; then
   # Register terminal-notifier's helper app with Notification Center.
   # macOS authorizes notifications per app identity; opening the bundled app
@@ -236,13 +257,12 @@ echo "==> Done. Backups (if any) in $BACKUP_DIR"
 # stays wrong after the first run and trains the reader to ignore the tail of
 # the output. The nvim vault overlay is deliberately absent: the vault lives in
 # a repo this one does not own, so it is opt-in and documented in the README.
+# The opencode TUI config is not here either; install.sh seeds it above.
 # Guarded on ${#next[@]} rather than expanding an empty array: macOS ships
 # bash 3.2, where `"${next[@]}"` trips `set -u`.
 next=()
 [ -f "$HOME/.gitconfig.local" ] ||
   next+=("cp dotfiles/git/.gitconfig.local.example ~/.gitconfig.local")
-[ -f "$HOME/.config/opencode/tui.jsonc" ] ||
-  next+=("cp dotfiles/opencode/.config/opencode/tui.jsonc.example ~/.config/opencode/tui.jsonc")
 if [ ${#next[@]} -gt 0 ]; then
   echo "    Next:"
   printf '      %s\n' "${next[@]}"
