@@ -33,7 +33,12 @@ if have brew; then
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update
-  sudo apt-get install -y git git-lfs curl mosh neovim ripgrep stow jq
+  # zsh is here and not in the Brewfile because macOS already ships the system
+  # /bin/zsh that consumers hardcode; Ubuntu does not package it by default, and
+  # the stack needs it for oh-my-zsh, the stowed zsh dotfiles, and alwayson's login
+  # shell. Without it the host ends up with a login shell pointing at a binary
+  # that was never installed.
+  sudo apt-get install -y git git-lfs curl mosh neovim ripgrep stow jq zsh
   if ! have herdr && [ ! -x "$HOME/.local/bin/herdr" ]; then
     echo "==> Installing herdr (not in apt) from herdr.dev"
     curl -fsSL https://herdr.dev/install.sh | sh
