@@ -54,8 +54,11 @@ and the developer tools they need. It does not own scheduled execution
 4. When behavior changes, update `docs/architecture.md` and add or supersede an
    ADR.
 5. Commit and push. A change is not finished until it is on `origin/main`; do
-   not leave work uncommitted. Match the message style in `git log`, and keep
-   unrelated changes in separate commits.
+   not leave work uncommitted. Push a functional change only once it has been
+   confirmed to work — a manual test, or the user saying it does. A
+   non-functional change (docs, comments, a version pin) can go straight in.
+   Match the message style in `git log`, and keep unrelated changes in separate
+   commits.
 
 ## Out Of Scope
 
