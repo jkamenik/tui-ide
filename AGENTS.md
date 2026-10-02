@@ -20,7 +20,7 @@ and the developer tools they need. It does not own scheduled execution
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
 | `dotfiles/nono/...` | nono user profiles; `tui-ide-agent.json` extends the opencode pack with the paths this repo's sessions use, `tui-ide-agent-local.json` is the git-ignored machine overlay ([ADR-0021](docs/adr/0021-derive-nono-profile-from-observed-use.md)) |
 | `dotfiles/claude/...` | Claude Code settings template; tracked but not stowed, `install.sh` merges it into `~/.claude/settings.json` ([ADR-0019](docs/adr/0019-merge-claude-user-settings.md)) |
-| `dotfiles/opencode/...` | opencode 2 client config template; tracked but not stowed, `install.sh` copies it to `~/.config/opencode/cli.json` when missing ([ADR-0024](docs/adr/0024-seed-the-opencode-client-config.md)) |
+| `dotfiles/opencode/...` | opencode client config templates, one per client-config spelling (`tui.jsonc.example` for 1.x, `cli.json.example` for 2.x); tracked but not stowed, `install.sh` copies the one the installed version reads when it is missing ([ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
 
@@ -78,6 +78,7 @@ git lfs version
 nono --version
 devcontainer --version
 claude --version
+opencode --version       # 1.x while the pin holds (ADR-0025)
 nono profile list              # tui-ide-agent must appear
 ```
 

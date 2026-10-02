@@ -21,12 +21,12 @@ macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
 
 Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode client config is
-machine-local, so `install.sh` seeds it from a tracked example on a fresh
-machine instead of linking it (see
-[ADR-0024](docs/adr/0024-seed-the-opencode-client-config.md)). Claude Code user
-settings are merged from a tracked template rather than stowed, because the
-hooks iTerm2 and herdr install there are machine-specific and Claude Code has
-no user-level overlay file (see
+machine-local, so `install.sh` seeds the file the installed opencode version
+reads from a tracked example on a fresh machine instead of linking it (see
+[ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)).
+Claude Code user settings are merged from a tracked template rather than stowed,
+because the hooks iTerm2 and herdr install there are machine-specific and Claude
+Code has no user-level overlay file (see
 [ADR-0019](docs/adr/0019-merge-claude-user-settings.md)).
 
 iTerm2 preferences are managed directly in the repo at
@@ -128,24 +128,35 @@ cp dotfiles/nvim/.config/nvim/lua/obsidian-local.example.lua \
 # edit the vault path (e.g. ~/github.com/jkamenik/second-brain)
 ```
 
-The opencode client config needs no step: `install.sh` copies
-`dotfiles/opencode/.config/opencode/cli.json.example` to
-`~/.config/opencode/cli.json` when the file is missing, so
-`"theme": { "name": "system", "mode": "system" }` follows the terminal palette.
-It is machine-local rather than linked, so edit it directly to add the herdr
-session plugin.
+The opencode client config needs no step: `install.sh` copies the example that
+matches the installed opencode version, `tui.jsonc` on 1.x and `cli.json` on
+2.x, when the file is missing, so the theme follows the terminal palette
+(`"theme": "system"`, `theme = { "name": "system", "mode": "system" }`). It is
+machine-local rather than linked, so edit it directly to add the herdr session
+plugin.
 
-opencode 2 reads `cli.json` and ignores the v1 `tui.json(c)`. It migrates
-`tui.json` on first start but not `tui.jsonc`, so on a machine that upgraded
-from v1 with the old seeded file, move anything you want to keep into
-`cli.json` by hand and delete `tui.jsonc`; `install.sh` prints this note when it
-finds one. A v1 theme name becomes `theme.name` and the v1 mode lock becomes
-`theme.mode`.
+Each version reads only its own file: opencode 2 ignores `tui.json(c)`, and 1.x
+ignores `cli.json`. v2 also migrates `tui.json` on first start but not
+`tui.jsonc`, so on a machine that upgraded from v1 with the old seeded file,
+move anything you want to keep by hand; `install.sh` prints a note naming
+whichever stale file it finds.
+
+opencode is pinned to the 1.x line, because the LLM gateway in use here does
+not serve v2. The `Brewfile` takes it from
+`anomalyco/tap/opencode` (1.x) rather than homebrew-core, which has moved to
+2.x, and `install.sh` runs `brew pin anomalyco/tap/opencode` so later runs leave
+it alone while the 1.x line keeps advancing (see
+[ADR-0025](docs/adr/0025-pin-opencode-to-the-1.x-line.md)). A machine holding
+the tap's 2.x formula must uninstall it first: `brew uninstall opencode-v2`,
+then run `install.sh`. To move to 2.x later, edit the `Brewfile` back to the
+unqualified `brew "opencode"`, drop the pin from `install.sh`, and
+`brew unpin anomalyco/tap/opencode`.
 
 The agent config itself, `~/.config/opencode/opencode.json(c)`, stays
-machine-local and untracked. A custom provider needs its runtime package named:
-opencode 2 has no default, so a v1 `provider` entry that relied on one fails
-with `Unsupported package for <provider>/<model>` until it carries
+machine-local and untracked. On 1.x a custom provider keeps working with no
+runtime package named, the way v1 defaulted to the OpenAI-compatible SDK. If you
+do move to 2.x, a custom provider needs its package named, or it fails with
+`Unsupported package for <provider>/<model>` until the entry carries
 `"npm": "@ai-sdk/openai-compatible"`. The v2 spelling of the same provider is:
 
 ```jsonc
@@ -174,7 +185,7 @@ Then finish the iTerm2 setup:
 (it skips this while iTerm2 is running, so quit iTerm2 and re-run if it says
 so). Restart iTerm2 afterward; the "Warm Burnout Dark" preset appears under
 Settings > Profiles > Colors > Color Presets, and herdr (`theme = "terminal"`)
-and opencode (`theme.name = "system"`) follow the same palette.
+and opencode (`theme = "system"`) follow the same palette.
 
 To do it by hand instead:
 

@@ -32,7 +32,9 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0021](0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted | 2026-09-28 |
 | [0022](0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted | 2026-09-28 |
 | [0023](0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Superseded by [0024](0024-seed-the-opencode-client-config.md) | 2026-09-28 |
-| [0024](0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Accepted | 2026-10-02 |
+| [0024](0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Superseded by [0026](0026-seed-the-client-config-the-installed-version-reads.md) | 2026-10-02 |
+| [0025](0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Accepted | 2026-10-02 |
+| [0026](0026-seed-the-client-config-the-installed-version-reads.md) | Seed the client config the installed version reads | Accepted | 2026-10-02 |
 
 ## Format
 

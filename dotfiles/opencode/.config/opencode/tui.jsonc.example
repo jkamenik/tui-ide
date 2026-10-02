@@ -1,0 +1,6 @@
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "theme": "system"
+  // Machine-local entries below. The herdr session plugin, for example:
+  // "plugin": ["./herdr-tui-session.js"]
+}

@@ -8,7 +8,12 @@ brew "ansible"
 brew "neovim"
 brew "mosh"
 brew "herdr"
-brew "opencode"
+# opencode comes from the tap, not homebrew-core: the tap ships both lines as
+# separate, conflicting formulae (anomalyco/tap/opencode = 1.x,
+# anomalyco/tap/opencode-v2 = 2.x) while core moved onto 2.x. We are on the 1.x
+# line for now (ADR-0025); install.sh pins the formula, which is what holds the
+# line, since `brew bundle` otherwise upgrades it on the next run.
+brew "anomalyco/tap/opencode"
 # nono is the kernel-enforced sandbox the agent CLIs run under (ADR-0020).
 # Landlock on Linux, Seatbelt on macOS, from one binary.
 brew "nono"
@@ -21,5 +26,6 @@ brew "stow"
 brew "jq"
 brew "lazygit"
 tap "cavanaug/tap-extras"
+tap "anomalyco/tap"
 brew "cavanaug/tap-extras/mermaid-ascii"
 brew "hashicorp/tap/terraform"

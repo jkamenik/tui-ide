@@ -22,7 +22,7 @@ if have brew; then
   # formulae need no entry and must not be listed: `brew trust` rejects their
   # unqualified names, which would abort the script under `set -e`.
   if brew trust --help >/dev/null 2>&1; then
-    for formula in cavanaug/tap-extras/mermaid-ascii hashicorp/tap/terraform; do
+    for formula in anomalyco/tap/opencode cavanaug/tap-extras/mermaid-ascii hashicorp/tap/terraform; do
       brew trust --formula "$formula"
     done
   fi
@@ -30,6 +30,11 @@ if have brew; then
   if [ "$os" = "Darwin" ]; then
     brew bundle --file="$REPO_DIR/Brewfile.macos"
   fi
+  # Hold opencode on the 1.x line (ADR-0025). `brew bundle` leaves pinned
+  # formulae out of its upgrades, so the pin is what stops the next run from
+  # moving the toolchain onto 2.x. Must follow bundle: `brew pin` fails on a
+  # formula that is not installed yet. Idempotent - re-pinning only warns.
+  brew pin anomalyco/tap/opencode
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update
@@ -193,32 +198,51 @@ fi
 
 # The opencode client config is machine-local: it carries the herdr session
 # plugin path, so convention 4 forbids tracking it and a stow link would put
-# that path in the repo (ADR-0024). The example is tracked and the real file is
+# that path in the repo (ADR-0026). The example is tracked and the real file is
 # copied out of it on a fresh machine, the same shape as the Claude Code
 # template above, and for the same reason it is copied rather than merged: the
 # copy happens once and the file is then the user's. A file that is already
 # there is never touched, so re-running install.sh cannot drop a local plugin
 # or theme.
 #
-# opencode 2 reads one global client config, `cli.json`, and ignores the v1
-# `tui.json(c)`. It migrates `tui.json` on first start but not `tui.jsonc`, so
-# a machine seeded from the old v1 example silently lost its theme; seeding
-# `cli.json` directly is what closes that.
-opencode_cli="$HOME/.config/opencode/cli.json"
-# -L is tested before -f: -f follows symlinks, so a link to a file that is
-# missing would read as "no file" and get overwritten.
-if [ -L "$opencode_cli" ]; then
-  echo "==> ~/.config/opencode/cli.json is a link; leaving it alone (see ADR-0024)"
-elif [ ! -f "$opencode_cli" ]; then
-  mkdir -p "$HOME/.config/opencode"
-  cp "$REPO_DIR/dotfiles/opencode/.config/opencode/cli.json.example" "$opencode_cli"
-  echo "==> Installed the opencode client config from dotfiles/opencode"
-  echo "    Edit ~/.config/opencode/cli.json for machine-local values"
-  echo "    (add the herdr session plugin with \"plugins\": [{\"package\": \"./herdr-tui-session.js\"}])"
-  if [ -f "$HOME/.config/opencode/tui.json" ] || [ -f "$HOME/.config/opencode/tui.jsonc" ]; then
-    echo "    NOTE: opencode 2 ignores tui.json(c). Move anything you want to keep"
-    echo "    from it into the file above, then delete it."
+# The filename follows the installed major version: v1 reads tui.json(c) and v2
+# reads cli.json and ignores tui.json(c), migrating tui.json on first start but
+# never tui.jsonc. Both examples stay tracked, so seeding against the installed
+# version is all it takes to be right on either line (ADR-0026). Nothing is
+# seeded when opencode is missing - the apt path does not install it - rather
+# than guessing which line will land.
+if have opencode; then
+  opencode_major="$(opencode --version 2>/dev/null | awk -F. 'NR==1{print $1}')" || true
+  opencode_major="${opencode_major//[!0-9]/}"
+  opencode_major="${opencode_major:-0}"
+  if [ "$opencode_major" -ge 2 ]; then
+    opencode_client="cli.json"
+    opencode_example="cli.json.example"
+  else
+    opencode_client="tui.jsonc"
+    opencode_example="tui.jsonc.example"
   fi
+  opencode_config="$HOME/.config/opencode/$opencode_client"
+  # -L is tested before -f: -f follows symlinks, so a link to a file that is
+  # missing would read as "no file" and get overwritten.
+  if [ -L "$opencode_config" ]; then
+    echo "==> ~/.config/opencode/$opencode_client is a link; leaving it alone (see ADR-0026)"
+  elif [ ! -f "$opencode_config" ]; then
+    mkdir -p "$HOME/.config/opencode"
+    cp "$REPO_DIR/dotfiles/opencode/.config/opencode/$opencode_example" "$opencode_config"
+    echo "==> Installed the opencode client config from dotfiles/opencode"
+    echo "    Edit ~/.config/opencode/$opencode_client for machine-local values (the herdr session plugin, for example)"
+    # Name whichever config file this version ignores, so a machine that moved
+    # lines is told its old file is inert rather than leaving it to look right.
+    for stale in tui.json tui.jsonc cli.json; do
+      if [ "$stale" != "$opencode_client" ] && [ -f "$HOME/.config/opencode/$stale" ]; then
+        echo "    NOTE: this opencode version ignores $stale. Move anything you want"
+        echo "    keep from it into the file above, then delete it."
+      fi
+    done
+  fi
+else
+  echo "==> opencode is not installed; skipping the client config. Re-run install.sh after installing it."
 fi
 
 if [ "$os" = "Darwin" ]; then

@@ -57,6 +57,7 @@ flowchart TB
 | nono | Agent sandbox | Kernel-enforced default-deny allow-list (Landlock on Linux, Seatbelt on macOS). Wraps `opencode` and `claude`; `-yolo` variants opt out |
 | devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet; how it relates to the nono sandbox is undecided |
 | Claude Code | Agent CLI | Alternate agent surface; user settings merged from a tracked template, hooks left local |
+| opencode | Agent CLI | Primary agent surface, pinned to the 1.x line from `anomalyco/tap`; the corporate LLM gateway does not serve v2 ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)) |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
@@ -112,17 +113,19 @@ flowchart TB
   custom preferences folder with `defaults write` when iTerm2 is quit, so GUI
   changes land in the working tree. It is not stowed.
 - **Colors:** the iTerm2 preset ("Warm Burnout Dark") is the source of truth;
-  herdr sets `theme.name = "terminal"` and opencode sets
-  `theme = { "name": "system", "mode": "system" }` in its local `cli.json`, so
-  both render from the terminal palette. opencode's file is machine-local, so
-  `install.sh` seeds it from a tracked example rather than stowing it
-  ([ADR-0024](adr/0024-seed-the-opencode-client-config.md)). opencode 2 moved
-  client config out of the v1 `tui.json(c)` and ignores those files.
+  herdr sets `theme.name = "terminal"` and opencode renders from the terminal
+  palette too, `theme = "system"` in `tui.jsonc` on the pinned 1.x line
+  ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)). opencode's file is
+  machine-local, so `install.sh` seeds the one the installed version reads from
+  a tracked example rather than stowing it
+  ([ADR-0026](adr/0026-seed-the-client-config-the-installed-version-reads.md)).
 
 ## Install Flow
 
 1. `install.sh` detects the OS.
-2. `brew bundle` installs the toolchain (casks on macOS only).
+2. `brew bundle` installs the toolchain (casks on macOS only) and
+   `brew pin anomalyco/tap/opencode` holds opencode on the 1.x line
+   ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)).
 3. `nono pull` fetches the agent sandbox profiles, so the first launch does not
    prompt for a pack install.
 4. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
@@ -130,10 +133,11 @@ flowchart TB
 5. `stow --no-folding` links the dotfiles into `$HOME`.
 6. Two files that cannot be linked are reconciled instead: `~/.claude/settings.json`
    is deep-merged from a tracked template
-   ([ADR-0019](adr/0019-merge-claude-user-settings.md)), and
-   `~/.config/opencode/cli.json` is copied from a tracked example when it is
-   missing ([ADR-0024](adr/0024-seed-the-opencode-client-config.md)). Neither
-   overwrites a file that already exists.
+   ([ADR-0019](adr/0019-merge-claude-user-settings.md)), and the opencode client
+   config (`tui.jsonc` on 1.x, `cli.json` on 2.x) is copied from the matching
+   tracked example when it is missing
+   ([ADR-0026](adr/0026-seed-the-client-config-the-installed-version-reads.md)).
+   Neither overwrites a file that already exists.
 7. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
 
 ## Relationship to Other Repos
@@ -173,4 +177,6 @@ record that replaced them.
 | [0021](adr/0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted |
 | [0022](adr/0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted |
 | [0023](adr/0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Superseded by [0024](adr/0024-seed-the-opencode-client-config.md) |
-| [0024](adr/0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Accepted |
+| [0024](adr/0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Superseded by [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) |
+| [0025](adr/0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Accepted |
+| [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) | Seed the client config the installed version reads | Accepted |
