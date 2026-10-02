@@ -112,10 +112,12 @@ flowchart TB
   custom preferences folder with `defaults write` when iTerm2 is quit, so GUI
   changes land in the working tree. It is not stowed.
 - **Colors:** the iTerm2 preset ("Warm Burnout Dark") is the source of truth;
-  herdr sets `theme.name = "terminal"` and opencode sets `"theme": "system"` in
-  its local `tui.jsonc`, so both render from the terminal palette. opencode's
-  file is machine-local, so `install.sh` seeds it from a tracked example rather
-  than stowing it ([ADR-0023](adr/0023-seed-the-opencode-tui-config.md)).
+  herdr sets `theme.name = "terminal"` and opencode sets
+  `theme = { "name": "system", "mode": "system" }` in its local `cli.json`, so
+  both render from the terminal palette. opencode's file is machine-local, so
+  `install.sh` seeds it from a tracked example rather than stowing it
+  ([ADR-0024](adr/0024-seed-the-opencode-client-config.md)). opencode 2 moved
+  client config out of the v1 `tui.json(c)` and ignores those files.
 
 ## Install Flow
 
@@ -129,8 +131,8 @@ flowchart TB
 6. Two files that cannot be linked are reconciled instead: `~/.claude/settings.json`
    is deep-merged from a tracked template
    ([ADR-0019](adr/0019-merge-claude-user-settings.md)), and
-   `~/.config/opencode/tui.jsonc` is copied from a tracked example when it is
-   missing ([ADR-0023](adr/0023-seed-the-opencode-tui-config.md)). Neither
+   `~/.config/opencode/cli.json` is copied from a tracked example when it is
+   missing ([ADR-0024](adr/0024-seed-the-opencode-client-config.md)). Neither
    overwrites a file that already exists.
 7. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
 
@@ -170,4 +172,5 @@ record that replaced them.
 | [0020](adr/0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted |
 | [0021](adr/0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted |
 | [0022](adr/0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted |
-| [0023](adr/0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Accepted |
+| [0023](adr/0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Superseded by [0024](adr/0024-seed-the-opencode-client-config.md) |
+| [0024](adr/0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Accepted |

@@ -31,7 +31,8 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0020](0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted | 2026-09-28 |
 | [0021](0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted | 2026-09-28 |
 | [0022](0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted | 2026-09-28 |
-| [0023](0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Accepted | 2026-09-28 |
+| [0023](0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Superseded by [0024](0024-seed-the-opencode-client-config.md) | 2026-09-28 |
+| [0024](0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Accepted | 2026-10-02 |
 
 ## Format
 

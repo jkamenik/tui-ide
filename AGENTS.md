@@ -20,6 +20,7 @@ and the developer tools they need. It does not own scheduled execution
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
 | `dotfiles/nono/...` | nono user profiles; `tui-ide-agent.json` extends the opencode pack with the paths this repo's sessions use, `tui-ide-agent-local.json` is the git-ignored machine overlay ([ADR-0021](docs/adr/0021-derive-nono-profile-from-observed-use.md)) |
 | `dotfiles/claude/...` | Claude Code settings template; tracked but not stowed, `install.sh` merges it into `~/.claude/settings.json` ([ADR-0019](docs/adr/0019-merge-claude-user-settings.md)) |
+| `dotfiles/opencode/...` | opencode 2 client config template; tracked but not stowed, `install.sh` copies it to `~/.config/opencode/cli.json` when missing ([ADR-0024](docs/adr/0024-seed-the-opencode-client-config.md)) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
 

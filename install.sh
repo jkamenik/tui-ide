@@ -191,25 +191,34 @@ else
   echo "==> jq is missing; leaving ~/.claude/settings.json untouched" >&2
 fi
 
-# The opencode TUI config is machine-local: it carries the herdr session plugin
-# path, so convention 4 forbids tracking it and a stow link would put that path
-# in the repo (ADR-0023). The example is tracked and the real file is copied out
-# of it on a fresh machine, the same shape as the Claude Code template above.
-# Unlike that file this one is not merged: it is JSONC, and the comment lines
-# the example uses to document itself are a parse error for `jq`. So the copy
-# happens once and the file is then the user's, which is what the
-# `.gitconfig.local` overlay already is. A file that is already there is never
-# touched, so re-running install.sh cannot drop a local plugin or theme.
-opencode_tui="$HOME/.config/opencode/tui.jsonc"
+# The opencode client config is machine-local: it carries the herdr session
+# plugin path, so convention 4 forbids tracking it and a stow link would put
+# that path in the repo (ADR-0024). The example is tracked and the real file is
+# copied out of it on a fresh machine, the same shape as the Claude Code
+# template above, and for the same reason it is copied rather than merged: the
+# copy happens once and the file is then the user's. A file that is already
+# there is never touched, so re-running install.sh cannot drop a local plugin
+# or theme.
+#
+# opencode 2 reads one global client config, `cli.json`, and ignores the v1
+# `tui.json(c)`. It migrates `tui.json` on first start but not `tui.jsonc`, so
+# a machine seeded from the old v1 example silently lost its theme; seeding
+# `cli.json` directly is what closes that.
+opencode_cli="$HOME/.config/opencode/cli.json"
 # -L is tested before -f: -f follows symlinks, so a link to a file that is
 # missing would read as "no file" and get overwritten.
-if [ -L "$opencode_tui" ]; then
-  echo "==> ~/.config/opencode/tui.jsonc is a link; leaving it alone (see ADR-0023)"
-elif [ ! -f "$opencode_tui" ]; then
+if [ -L "$opencode_cli" ]; then
+  echo "==> ~/.config/opencode/cli.json is a link; leaving it alone (see ADR-0024)"
+elif [ ! -f "$opencode_cli" ]; then
   mkdir -p "$HOME/.config/opencode"
-  cp "$REPO_DIR/dotfiles/opencode/.config/opencode/tui.jsonc.example" "$opencode_tui"
-  echo "==> Installed the opencode TUI config from dotfiles/opencode"
-  echo "    Edit ~/.config/opencode/tui.jsonc for machine-local values (the herdr session plugin, for example)"
+  cp "$REPO_DIR/dotfiles/opencode/.config/opencode/cli.json.example" "$opencode_cli"
+  echo "==> Installed the opencode client config from dotfiles/opencode"
+  echo "    Edit ~/.config/opencode/cli.json for machine-local values"
+  echo "    (add the herdr session plugin with \"plugins\": [{\"package\": \"./herdr-tui-session.js\"}])"
+  if [ -f "$HOME/.config/opencode/tui.json" ] || [ -f "$HOME/.config/opencode/tui.jsonc" ]; then
+    echo "    NOTE: opencode 2 ignores tui.json(c). Move anything you want to keep"
+    echo "    from it into the file above, then delete it."
+  fi
 fi
 
 if [ "$os" = "Darwin" ]; then
@@ -257,7 +266,7 @@ echo "==> Done. Backups (if any) in $BACKUP_DIR"
 # stays wrong after the first run and trains the reader to ignore the tail of
 # the output. The nvim vault overlay is deliberately absent: the vault lives in
 # a repo this one does not own, so it is opt-in and documented in the README.
-# The opencode TUI config is not here either; install.sh seeds it above.
+# The opencode client config is not here either; install.sh seeds it above.
 # Guarded on ${#next[@]} rather than expanding an empty array: macOS ships
 # bash 3.2, where `"${next[@]}"` trips `set -u`.
 next=()

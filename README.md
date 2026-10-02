@@ -20,10 +20,10 @@ lazygit, terraform.
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
 
-Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode TUI config is
+Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode client config is
 machine-local, so `install.sh` seeds it from a tracked example on a fresh
 machine instead of linking it (see
-[ADR-0023](docs/adr/0023-seed-the-opencode-tui-config.md)). Claude Code user
+[ADR-0024](docs/adr/0024-seed-the-opencode-client-config.md)). Claude Code user
 settings are merged from a tracked template rather than stowed, because the
 hooks iTerm2 and herdr install there are machine-specific and Claude Code has
 no user-level overlay file (see
@@ -128,11 +128,43 @@ cp dotfiles/nvim/.config/nvim/lua/obsidian-local.example.lua \
 # edit the vault path (e.g. ~/github.com/jkamenik/second-brain)
 ```
 
-The opencode TUI config needs no step: `install.sh` copies
-`dotfiles/opencode/.config/opencode/tui.jsonc.example` to
-`~/.config/opencode/tui.jsonc` when the file is missing, so `"theme": "system"`
-follows the terminal palette. It is machine-local rather than linked, so edit
-it directly to add the herdr session plugin.
+The opencode client config needs no step: `install.sh` copies
+`dotfiles/opencode/.config/opencode/cli.json.example` to
+`~/.config/opencode/cli.json` when the file is missing, so
+`"theme": { "name": "system", "mode": "system" }` follows the terminal palette.
+It is machine-local rather than linked, so edit it directly to add the herdr
+session plugin.
+
+opencode 2 reads `cli.json` and ignores the v1 `tui.json(c)`. It migrates
+`tui.json` on first start but not `tui.jsonc`, so on a machine that upgraded
+from v1 with the old seeded file, move anything you want to keep into
+`cli.json` by hand and delete `tui.jsonc`; `install.sh` prints this note when it
+finds one. A v1 theme name becomes `theme.name` and the v1 mode lock becomes
+`theme.mode`.
+
+The agent config itself, `~/.config/opencode/opencode.json(c)`, stays
+machine-local and untracked. A custom provider needs its runtime package named:
+opencode 2 has no default, so a v1 `provider` entry that relied on one fails
+with `Unsupported package for <provider>/<model>` until it carries
+`"npm": "@ai-sdk/openai-compatible"`. The v2 spelling of the same provider is:
+
+```jsonc
+{
+  "providers": {
+    "acme": {
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "settings": {
+        "baseURL": "https://llm.example.com/v1",
+        "apiKey": "{env:ACME_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Keep the `aisdk:` prefix, and keep each provider entry in one format: opencode
+does not mix the v1 and v2 spellings field by field. `opencode debug config`
+prints what the service actually loaded, scoped to the current directory.
 
 Then finish the iTerm2 setup:
 
@@ -142,7 +174,7 @@ Then finish the iTerm2 setup:
 (it skips this while iTerm2 is running, so quit iTerm2 and re-run if it says
 so). Restart iTerm2 afterward; the "Warm Burnout Dark" preset appears under
 Settings > Profiles > Colors > Color Presets, and herdr (`theme = "terminal"`)
-and opencode (`"theme": "system"`) follow the same palette.
+and opencode (`theme.name = "system"`) follow the same palette.
 
 To do it by hand instead:
 
