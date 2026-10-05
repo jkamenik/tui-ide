@@ -21,6 +21,10 @@ if have brew; then
   # Homebrew 6 and older have no `brew trust`, hence the guard. homebrew-core
   # formulae need no entry and must not be listed: `brew trust` rejects their
   # unqualified names, which would abort the script under `set -e`.
+  # Ensure third-party taps are tapped (Homebrew 7 requires explicit tapping for trusted taps)
+  brew tap anomalyco/tap || true
+  brew tap cavanaug/tap-extras || true
+  brew tap hashicorp/tap || true
   if brew trust --help >/dev/null 2>&1; then
     for formula in anomalyco/tap/opencode cavanaug/tap-extras/mermaid-ascii hashicorp/tap/terraform; do
       brew trust --formula "$formula"
