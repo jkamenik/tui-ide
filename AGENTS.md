@@ -79,6 +79,7 @@ nono --version
 devcontainer --version
 claude --version
 opencode --version       # 1.x while the pin holds (ADR-0025)
+nono outdated            # nolabs-ai/opencode must be 0.2.0 (pinned) (ADR-0027)
 nono profile list              # tui-ide-agent must appear
 ```
 

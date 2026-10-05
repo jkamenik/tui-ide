@@ -262,6 +262,7 @@ git lfs version
 nono --version
 devcontainer --version
 nono list --installed          # nolabs-ai/claude, nolabs-ai/opencode
+nono outdated                  # nolabs-ai/opencode must be 0.2.0 (pinned) (ADR-0027)
 nono profile list              # tui-ide-agent, and -local when the overlay exists
 claude --version
 ```

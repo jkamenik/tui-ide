@@ -93,7 +93,10 @@ flowchart TB
 - **Agent sandbox:** `opencode` and `claude` are zsh functions that run the real
   binaries under `nono run` with the profiles from the `nolabs-ai/opencode` and
   `nolabs-ai/claude` registry packs, which `install.sh` pulls. Capability sets
-  are upstream and signature-verified, not tracked here. `opencode` additionally
+  are upstream and signature-verified, not tracked here. The opencode pack is
+  pinned to 0.2.0 because 0.3.0 appends `--standalone`, a v2 flag the pinned v1
+  line rejects ([ADR-0027](adr/0027-pin-the-opencode-nono-pack-to-0.2.0.md));
+  the claude pack stays unpinned. `opencode` additionally
   layers the tracked `tui-ide-agent` profile from `dotfiles/nono`, which extends
   the pack with the directories this repo's agent sessions actually used
   (`~/.config/{nvim,herdr,iterm2}`, plus `~/Library/{Fonts,LaunchAgents}` on
@@ -127,7 +130,8 @@ flowchart TB
    `brew pin anomalyco/tap/opencode` holds opencode on the 1.x line
    ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)).
 3. `nono pull` fetches the agent sandbox profiles, so the first launch does not
-   prompt for a pack install.
+   prompt for a pack install. The opencode pack is pulled at its pinned 0.2.0
+   and held with `nono pin` ([ADR-0027](adr/0027-pin-the-opencode-nono-pack-to-0.2.0.md)).
 4. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
    that resolve into the repo are skipped.
 5. `stow --no-folding` links the dotfiles into `$HOME`.
