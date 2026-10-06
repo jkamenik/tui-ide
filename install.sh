@@ -6,7 +6,7 @@ set -euo pipefail
 # Physical path: the backup guard below compares against realpath output.
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
-DOTFILES=(nvim herdr git zsh)
+DOTFILES=(nvim herdr git zsh nono)
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
