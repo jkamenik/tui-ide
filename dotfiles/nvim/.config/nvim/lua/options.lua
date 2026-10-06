@@ -8,9 +8,6 @@ vim.opt.termguicolors = true
 vim.opt.mouse = "a"
 vim.opt.clipboard = "unnamedplus"
 
-vim.opt.list = true
-vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
-
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 2
 vim.opt.tabstop = 2
