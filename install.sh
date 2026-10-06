@@ -226,6 +226,29 @@ if have opencode; then
     opencode_client="tui.jsonc"
     opencode_example="tui.jsonc.example"
   fi
+  # Custom themes are loaded by filename from ~/.config/opencode/themes/, so the
+  # tracked Warm Burnout theme is seeded there and then left alone -- same
+  # copy-once contract as the client config, because a theme is as editable as
+  # the config that references it. Themes are version-independent, unlike the
+  # client config above, so this runs on both the v1 and v2 lines.
+  opencode_theme_dir="$HOME/.config/opencode/themes"
+  if [ ! -f "$opencode_theme_dir/warm-burnout.json" ]; then
+    mkdir -p "$opencode_theme_dir"
+    cp "$REPO_DIR/dotfiles/opencode/.config/opencode/themes/warm-burnout.json" \
+       "$opencode_theme_dir/warm-burnout.json"
+    echo "==> Installed the opencode theme warm-burnout from dotfiles/opencode"
+    echo "    Select it from /theme in the TUI. iTerm2, herdr, and nvim already"
+    echo "    carry the same palette; this is the only piece that needs picking."
+  else
+    # Copy-once means a tracked edit to the theme never reaches a file that is
+    # already there, and nothing else says so: the run still reports green, so a
+    # refreshed palette looks applied when it is not. Diff is what makes that
+    # staleness visible, because there is no tracked history for a seeded file.
+    echo "==> ~/.config/opencode/themes/warm-burnout.json exists; left alone (copy-once)"
+    echo "    If the tracked theme changed since it was seeded, merge by hand:"
+    echo "      diff -u '$REPO_DIR/dotfiles/opencode/.config/opencode/themes/warm-burnout.json' '$opencode_theme_dir/warm-burnout.json'"
+  fi
+
   opencode_config="$HOME/.config/opencode/$opencode_client"
   # -L is tested before -f: -f follows symlinks, so a link to a file that is
   # missing would read as "no file" and get overwritten.
@@ -244,6 +267,17 @@ if have opencode; then
         echo "    keep from it into the file above, then delete it."
       fi
     done
+  else
+    # Copy-once (ADR-0023): a tracked change to the example never reaches a file
+    # that already exists, and nothing else flags it -- the run still reports
+    # green, so an updated default looks applied when it is not. That is the
+    # contract's whole failure mode, and it is silent, so say it and hand over the
+    # diff. A seeded file has no tracked history, so diffing it against the
+    # example is the only way to see what has moved.
+    echo "==> ~/.config/opencode/$opencode_client exists; left alone (copy-once, ADR-0023)"
+    echo "    Tracked changes to $opencode_example are NOT applied to it. If the"
+    echo "    example has moved since this was seeded, merge by hand:"
+    echo "      diff -u '$REPO_DIR/dotfiles/opencode/.config/opencode/$opencode_example' '$opencode_config'"
   fi
 else
   echo "==> opencode is not installed; skipping the client config. Re-run install.sh after installing it."

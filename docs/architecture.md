@@ -112,12 +112,16 @@ flowchart TB
   `dotfiles/iterm2/.config/iterm2/AppSupport/`. `install.sh` enables iTerm2's
   custom preferences folder with `defaults write` when iTerm2 is quit, so GUI
   changes land in the working tree. It is not stowed.
-- **Colors:** the iTerm2 preset ("Warm Burnout Dark") is the source of truth;
-  herdr sets `theme.name = "terminal"` and opencode renders from the terminal
-  palette too, `theme = "system"` in `tui.jsonc` on the pinned 1.x line
-  ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)). opencode's file is
-  machine-local, so `install.sh` seeds the one the installed version reads from
-  a tracked example rather than stowing it
+- **Colors:** the iTerm2 preset ("Warm Burnout Dark") is the source of truth for
+  the terminal, and herdr renders from it with `theme.name = "terminal"`.
+  opencode instead names the tracked `themes/warm-burnout.json`, `theme =
+  "warm-burnout"` on the pinned 1.x line
+  ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)): `system` inherits the
+  terminal palette, which leaves nothing to inherit under `opencode serve` on
+  the always-on host, and the fallback is silent. The two are kept in step by
+  hand rather than by derivation. opencode's file is machine-local, so
+  `install.sh` seeds the one the installed version reads from a tracked example
+  rather than stowing it
   ([ADR-0026](adr/0026-seed-the-client-config-the-installed-version-reads.md)).
 
 ## Install Flow

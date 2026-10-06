@@ -1,6 +1,11 @@
 {
   "$schema": "https://opencode.ai/tui.json",
-  "theme": "system"
+  // The tracked theme in themes/, so opencode renders the same palette as the
+  // iTerm2 preset, herdr, and nvim. ADR-0013 had this on "system" to inherit the
+  // terminal palette, which only works where opencode runs inside a terminal --
+  // the always-on host serves opencode headless, where "system" has no terminal
+  // to read and fell back to its own default.
+  "theme": "warm-burnout"
   // Machine-local entries below. The herdr session plugin, for example:
   // "plugin": ["./herdr-tui-session.js"]
 }

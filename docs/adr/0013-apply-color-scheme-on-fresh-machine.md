@@ -22,9 +22,16 @@ following the terminal.
 is not running (a running instance overwrites the keys on quit). The plist
 stays at `dotfiles/iterm2/.config/iterm2/AppSupport/` and is still not stowed.
 herdr will track `dotfiles/herdr/.config/herdr/config.toml` with
-`theme.name = "terminal"`, and opencode's TUI config sets `"theme": "system"`,
-so both render from the terminal's ANSI palette and the iTerm2 preset remains
-the single source of color truth. opencode's TUI config is machine-local
+`theme.name = "terminal"`, so it renders from the terminal's palette.
+opencode instead names its own tracked theme, `"theme": "warm-burnout"`
+(ADR-0026): `system` derives its grayscale from a terminal background and uses
+ANSI 0-15, so it works in a TUI and silently degrades under `opencode serve`,
+where the always-on host has no terminal to derive from. Naming the theme makes
+both contexts render Warm Burnout. The cost is that the iTerm2 preset is no
+longer the single source of color truth: opencode's palette now comes from
+`themes/warm-burnout.json` and has to be kept in step by hand with the iTerm2
+preset and the nvim colorscheme.
+opencode's TUI config is machine-local
 (`~/.config/opencode/tui.jsonc`, which also holds the herdr session plugin), so
 the repo tracks a `.example` and `install.sh` documents the setup rather than
 stowing it.

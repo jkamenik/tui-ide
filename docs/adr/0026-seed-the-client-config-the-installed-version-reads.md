@@ -25,8 +25,16 @@ for v2, and `install.sh` seeds the one the installed major version reads. It
 takes the major from `opencode --version` and picks:
 
 - major 2 or higher: `cli.json`, the v2 spelling, theme
-  `{ "name": "system", "mode": "system" }`
-- major 1: `tui.jsonc`, the v1 spelling, theme `"system"`
+  `{ "name": "warm-burnout", "mode": "system" }`
+- major 1: `tui.jsonc`, the v1 spelling, theme `"warm-burnout"`
+
+Both spellings name the tracked `themes/warm-burnout.json` rather than
+`"system"`. `system` derives its grayscale from a terminal background and reads
+ANSI 0-15, so it is correct inside a TUI and degrades under `opencode serve`,
+where the always-on host has no terminal to inherit from — and it degrades
+silently, falling back to opencode's own default rather than failing. Naming the
+theme makes the same example correct in both contexts, and naming it identically
+on both lines is what keeps the Positive claim below true.
 
 When opencode is not installed at all, `install.sh` seeds nothing and says so,
 rather than guessing a line. The apt path does not install opencode, and a
@@ -37,6 +45,14 @@ file is never touched, a symlink is left alone and reported, and the tracked
 `*.example` suffix keeps the template out of the live config path. The note for
 an upgraded machine now names whichever stale file is present, whichever line is
 installed.
+
+The one-shot copy means a tracked change to an example never reaches a file that
+already exists, and a green run does not distinguish "still correct" from
+"stale". `install.sh` now reports that drift with a ready-to-run `diff` on every
+run, so the manual merge it implies is never invisible. The merge itself stays
+deliberately manual: making a machine's copy follow the repo needs two-way
+reconciliation — tracked intent merged in, local values inspected for whether
+they belong back — which a symlink or a blind overwrite cannot express.
 
 ## Consequences
 
