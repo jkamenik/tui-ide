@@ -118,19 +118,12 @@ fi
 # with a hint when there is none, so pull them here, where the output is
 # visible, rather than surprising the user on the first agent launch. A registry
 # failure must not abort a bootstrap that has already installed everything else.
-#
-# The opencode pack is pinned to 0.2.0: 0.3.0 appends `--standalone`, an
-# opencode v2 flag that the pinned v1 line (ADR-0025) rejects, so a sandboxed
-# opencode prints help and exits at launch. `@0.2.0` selects the version and
-# `nono pin` keeps `nono update` from moving it back. See ADR-0027.
 if have nono; then
   echo "==> Installing nono sandbox profiles"
-  nono pull nolabs-ai/claude ||
-    echo "    nono pull nolabs-ai/claude failed; re-run it before the first sandboxed session" >&2
-  nono pull nolabs-ai/opencode@0.2.0 ||
-    echo "    nono pull nolabs-ai/opencode@0.2.0 failed; re-run it before the first sandboxed session" >&2
-  nono pin nolabs-ai/opencode ||
-    echo "    nono pin nolabs-ai/opencode failed; run it so nono update keeps 0.2.0" >&2
+  for pack in nolabs-ai/claude nolabs-ai/opencode; do
+    nono pull "$pack" ||
+      echo "    nono pull $pack failed; re-run it before the first sandboxed session" >&2
+  done
 fi
 
 if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
