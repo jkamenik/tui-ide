@@ -142,7 +142,17 @@ flowchart TB
    tracked example when it is missing
    ([ADR-0026](adr/0026-seed-the-client-config-the-installed-version-reads.md)).
    Neither overwrites a file that already exists.
-7. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
+7. opencode's state directories (`~/.opencode` plus the config, cache, data and
+   state ones) are created when missing. nono resolves `filesystem.allow`
+   against the filesystem as it stands when the sandbox is built, so on a fresh
+   machine every one of those grants is dropped and the first sandboxed launch
+   dies with `AlreadyExists: FileSystem.makeDirectory (~/.opencode)` — the run
+   leaves the directory behind, but after the grant was already resolved
+   without it. The `nolabs-ai/opencode` pack ships `bin/ensure-dirs.sh` for
+   exactly this, but declares it a `plugin` artifact and leaves it out of
+   `wiring`, so nothing executes it
+   ([ADR-0028](adr/0028-pre-create-opencode-state-dirs-at-bootstrap.md)).
+8. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
 
 ## Relationship to Other Repos
 
@@ -184,3 +194,4 @@ record that replaced them.
 | [0024](adr/0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Superseded by [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) |
 | [0025](adr/0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Accepted |
 | [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) | Seed the client config the installed version reads | Accepted |
+| [0028](adr/0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Accepted |

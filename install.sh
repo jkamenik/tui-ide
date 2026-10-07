@@ -226,6 +226,29 @@ if have opencode; then
     opencode_client="tui.jsonc"
     opencode_example="tui.jsonc.example"
   fi
+  # nono resolves filesystem.allow against the filesystem as it stands when the
+  # sandbox is built. On a fresh machine none of opencode's state dirs exist
+  # yet, so every one of them is dropped from the grant set, the first
+  # sandboxed launch fails with `AlreadyExists: FileSystem.makeDirectory
+  # (~/.opencode)`, and the run still leaves the dir behind - too late, because
+  # the grant was already resolved without it. The opencode pack ships
+  # bin/ensure-dirs.sh to pre-create exactly these six, but package.json
+  # declares it a `plugin` artifact and leaves it out of `wiring`, so nothing
+  # ever executes it. mkdir -p is idempotent, so this costs nothing on a machine
+  # where opencode has already run. See ADR-0028.
+  for opencode_state_dir in \
+    "$HOME/.opencode" \
+    "$HOME/.config/opencode" \
+    "$HOME/.cache/opencode" \
+    "$HOME/.local/share/opencode" \
+    "$HOME/.local/share/opentui" \
+    "$HOME/.local/state/opencode"
+  do
+    if [ ! -d "$opencode_state_dir" ]; then
+      mkdir -p "$opencode_state_dir"
+      echo "==> Created opencode state dir $opencode_state_dir"
+    fi
+  done
   # Custom themes are loaded by filename from ~/.config/opencode/themes/, so the
   # tracked Warm Burnout theme is seeded there and then left alone -- same
   # copy-once contract as the client config, because a theme is as editable as
