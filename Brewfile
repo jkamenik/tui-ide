@@ -29,3 +29,5 @@ tap "cavanaug/tap-extras"
 tap "anomalyco/tap"
 brew "cavanaug/tap-extras/mermaid-ascii"
 brew "hashicorp/tap/terraform"
+# go-task is Task (taskfile.dev), the build/task runner (ADR-0029).
+brew "go-task"

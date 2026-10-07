@@ -15,7 +15,7 @@ This is a complete stack:
 
 Toolchain via Homebrew (macOS and Linuxbrew): git, git-lfs, gh, ansible, neovim,
 mosh, herdr, opencode, nono, devcontainer, claude-code, ripgrep, stow, jq,
-lazygit, terraform.
+lazygit, terraform, go-task.
 
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
@@ -258,6 +258,7 @@ herdr --version
 mosh --version
 stow --version
 lazygit --version
+task --version
 git lfs version
 nono --version
 devcontainer --version
