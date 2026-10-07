@@ -230,3 +230,10 @@ claude() { nono_agent nolabs-ai/claude claude "$@" }
 # `command` skips this shell's function, so these reach the real binary.
 opencode-yolo() { command opencode "$@" }
 claude-yolo() { command claude "$@" }
+
+# Load nvm so project-pinned Node versions resolve. `--no-use` defers
+# switching off the system Node until a .nvmrc selects one, so an unversioned
+# directory keeps the default. The completion file is bash-named but zsh-safe.
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
