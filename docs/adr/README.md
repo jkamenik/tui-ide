@@ -35,6 +35,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0024](0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Superseded by [0026](0026-seed-the-client-config-the-installed-version-reads.md) | 2026-10-02 |
 | [0025](0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Accepted | 2026-10-02 |
 | [0026](0026-seed-the-client-config-the-installed-version-reads.md) | Seed the client config the installed version reads | Accepted | 2026-10-02 |
+| [0027](0027-pin-the-opencode-nono-pack-to-0.2.0.md) | Pin the opencode nono pack to 0.2.0 | Accepted | 2026-10-07 |
 | [0028](0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Accepted | 2026-10-06 |
 
 ## Format
