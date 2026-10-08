@@ -126,6 +126,11 @@ flowchart TB
   `install.sh` seeds the one the installed version reads from a tracked example
   rather than stowing it
   ([ADR-0026](adr/0026-seed-the-client-config-the-installed-version-reads.md)).
+- **Global agent rules:** opencode reads `~/.config/opencode/AGENTS.md` for every
+  session. It is portable — no machine-local values — so it is tracked in its own
+  package, `dotfiles/opencode-agents/`, and stowed as a link rather than seeded
+  from an example, which keeps one source of truth with no copy-once drift
+  ([ADR-0030](adr/0030-stow-the-global-opencode-agents-md.md)).
 
 ## Install Flow
 

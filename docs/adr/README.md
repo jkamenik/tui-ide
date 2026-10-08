@@ -38,6 +38,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0027](0027-pin-the-opencode-nono-pack-to-0.2.0.md) | Pin the opencode nono pack to 0.2.0 | Accepted | 2026-10-07 |
 | [0028](0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Accepted | 2026-10-06 |
 | [0029](0029-go-task-as-task-runner.md) | go-task as the task runner | Accepted | 2026-10-07 |
+| [0030](0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted | 2026-10-08 |
 
 ## Format
 
