@@ -108,7 +108,10 @@ Each version reads only its own file: opencode 2 ignores `tui.json(c)`, and 1.x
 ignores `cli.json`. v2 also migrates `tui.json` on first start but not
 `tui.jsonc`, so on a machine that upgraded from v1 with the old seeded file,
 move anything you want to keep by hand; `install.sh` prints a note naming
-whichever stale file it finds.
+whichever stale file it finds. The herdr opencode integration writes its plugin
+entry into the file the installed version reads (`tui.jsonc` on 1.x, `cli.json`
+on 2.x) and re-creates the 1.x file if it is removed, so a `tui.jsonc` left on a
+2.x machine is expected and inert; leave it for herdr rather than deleting it.
 
 opencode tracks the 2.x line ([ADR-0032](docs/adr/0032-track-the-opencode-2.x-line.md)).
 The `Brewfile` takes it from `anomalyco/tap/opencode-v2` rather than

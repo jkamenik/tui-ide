@@ -76,7 +76,11 @@ Only after PASS. From the repo checkout, `git pull` and check whether
 1. `cli.json`: `install.sh` seeds the tracked example, theme `warm-burnout`.
    Move only the values that matter from `~/.config/opencode/tui.jsonc` - v2
    ignores `tui.json(c)` and never auto-migrates the `.jsonc` variant.
-   `install.sh` prints the stale-file note. Delete `tui.jsonc` after moving.
+   `install.sh` prints the stale-file note. `tui.jsonc` also holds herdr's
+   plugin entry: run `herdr integration install opencode`, which writes the v2
+   entry into `cli.json` (`"plugins": ["./herdr-opencode"]`) and re-creates
+   `tui.jsonc` if it is missing, so leave that file in place - it is inert on v2
+   and deleting it only makes herdr report "needs repair" and rewrite it.
 2. Plugins: v1 plugin implementations do not run on v2. The herdr TUI session
    plugin and any files under `~/.config/opencode/plugins/` must be v2
    versions (`Plugin.define`, the `plugins` key, a 2.x plugin package) or be
