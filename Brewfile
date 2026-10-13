@@ -14,9 +14,6 @@ brew "herdr"
 # line for now (ADR-0025); install.sh pins the formula, which is what holds the
 # line, since `brew bundle` otherwise upgrades it on the next run.
 brew "anomalyco/tap/opencode"
-# nono is the kernel-enforced sandbox the agent CLIs run under (ADR-0020).
-# Landlock on Linux, Seatbelt on macOS, from one binary.
-brew "nono"
 # devcontainer is the Dev Containers CLI. Homebrew installs it as the npm
 # package @devcontainers/cli, so it brings node in as a dependency.
 brew "devcontainer"

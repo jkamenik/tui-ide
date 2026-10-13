@@ -25,7 +25,7 @@ flowchart TB
         Shell["zsh + oh-my-zsh"]
         Mux["herdr"]
         Edit["Neovim"]
-        Tools["mosh, git, git-lfs, gh, ansible, nono, devcontainer, opencode, claude-code, ripgrep, lazygit, terraform, go-task, gcloud"]
+        Tools["mosh, git, git-lfs, gh, ansible, devcontainer, opencode, claude-code, ripgrep, lazygit, terraform, go-task, gcloud"]
     end
 
     subgraph Remote["Always-on host - automations repo"]
@@ -54,10 +54,9 @@ flowchart TB
 | zsh + oh-my-zsh | Shell | Portable across macOS and Linux |
 | herdr | Multiplexer | Server-side sessions; UI theme follows the terminal palette |
 | Neovim | Editor | Human editing surface; agent lives in the opencode TUI. `$EDITOR`, and `vi` by alias |
-| nono | Agent sandbox | Kernel-enforced default-deny allow-list (Landlock on Linux, Seatbelt on macOS). Wraps `opencode` and `claude`; `-yolo` variants opt out |
-| devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet; how it relates to the nono sandbox is undecided |
-| Claude Code | Agent CLI | Alternate agent surface; user settings merged from a tracked template, hooks left local |
-| opencode | Agent CLI | Primary agent surface, pinned to the 1.x line from `anomalyco/tap`; the corporate LLM gateway does not serve v2 ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)) |
+| devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet |
+| Claude Code | Agent CLI | Alternate agent surface; plain binary on `$PATH` since ADR-0031; user settings merged from a tracked template, hooks left local |
+| opencode | Agent CLI | Primary agent surface, plain binary on `$PATH` since ADR-0031; pinned to the 1.x line from `anomalyco/tap` because the corporate LLM gateway does not serve v2 ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)) |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
@@ -73,8 +72,8 @@ flowchart TB
   `Brewfile.macos`; apt fallback for Linux without Homebrew. Tools the
   distribution does not package install from upstream instead: herdr from
   `herdr.dev`, LazyGit from its GitHub release tarball into `$HOME/.local/bin`,
-  nono from its release `.deb`. Each is skipped when the binary is already
-  present.
+  and Claude Code from its official installer. Each is skipped when the binary
+  is already present.
 - **Dotfiles:** Stow packages map directly onto `$HOME`. Adding a package means
   adding a directory under `dotfiles/` and listing it in `install.sh`. Stow
   runs with `--no-folding` so apps that rewrite their config in place never
@@ -85,32 +84,18 @@ flowchart TB
   git-ignored. `dotfiles/git/.gitconfig` includes `~/.gitconfig.local`, which
   holds identity and the 1Password SSH signing agent path.
 - **Secrets:** the 1Password CLI (`op`) provides credentials. No secret is ever
-  committed. The agent CLIs additionally run with those credentials out of
-  reach: nono denies `~/.ssh`, `~/.aws`, `~/.config/gcloud`, `~/.config/gh`,
-  and the shell configs inside the sandbox. The one exception is the
-  `claude-code` pack, which grants `~/Library/Keychains` read+write because
-  Claude Code keeps its OAuth token in the login keychain.
-- **Agent sandbox:** `opencode` and `claude` are zsh functions that run the real
-  binaries under `nono run` with the profiles from the `nolabs-ai/opencode` and
-  `nolabs-ai/claude` registry packs, which `install.sh` pulls. Capability sets
-  are upstream and signature-verified, not tracked here. The opencode pack is
-  pinned to 0.2.0 because 0.3.0 appends `--standalone`, a v2 flag the pinned v1
-  line rejects ([ADR-0027](adr/0027-pin-the-opencode-nono-pack-to-0.2.0.md));
-  the claude pack stays unpinned. `opencode` additionally
-  layers the tracked `tui-ide-agent` profile from `dotfiles/nono`, which extends
-  the pack with the directories this repo's agent sessions actually used
-  (`~/.config/{nvim,herdr,iterm2}`, plus `~/Library/{Fonts,LaunchAgents}` on
-  macOS); machine-specific paths such as the sibling `second-brain` repo go in a
-  git-ignored `tui-ide-agent-local.json` overlay, and the wrapper prefers the
-  overlay when it exists. `opencode-yolo` and `claude-yolo` are the same
-  binaries with no boundary. Because `nono run` supervises rather than execs,
-  the wrapper also sets `HERDR_AGENT` on the `nono` command so herdr can still
-  identify the agent behind the wrapper. Claude Code's own sandbox is off in the
-  tracked settings template, so nono is the only layer and the
-  `dangerouslyDisableSandbox` retry path is closed. See
-  [ADR-0020](adr/0020-sandbox-agent-clis-with-nono.md),
-  [ADR-0021](adr/0021-derive-nono-profile-from-observed-use.md), and
-  [ADR-0022](adr/0022-label-sandboxed-agent-for-herdr.md).
+  committed. The agent CLIs run as the user with no boundary since
+  [ADR-0031](adr/0031-retire-the-nono-sandbox.md) retired nono, so `~/.ssh`,
+  `~/.aws`, `~/.config/gcloud`, `~/.config/gh`, and the shell configs are all
+  reachable from a session; the tracked Claude template likewise keeps Claude's
+  own sandbox off.
+- **Agents:** `opencode` and `claude` are plain binaries on `$PATH`. Each agent
+  is the pane's foreground process, which is what herdr reads to identify it in
+  the agents view, so no wrapper hint is needed. The nono sandbox, its profile
+  derivation, its pack pin, and its `HERDR_AGENT` label are all retired
+  ([ADR-0031](adr/0031-retire-the-nono-sandbox.md));
+  `uninstall-nono-supacode.sh` at the repo root cleans machines provisioned
+  before the retirement.
 - **iTerm2 (macOS):** `com.googlecode.iterm2.plist` lives in the repo at
   `dotfiles/iterm2/.config/iterm2/AppSupport/`. `install.sh` enables iTerm2's
   custom preferences folder with `defaults write` when iTerm2 is quit, so GUI
@@ -138,30 +123,23 @@ flowchart TB
 2. `brew bundle` installs the toolchain (casks on macOS only) and
    `brew pin anomalyco/tap/opencode` holds opencode on the 1.x line
    ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)).
-3. `nono pull` fetches the agent sandbox profiles, so the first launch does not
-   prompt for a pack install. The opencode pack is pulled at its pinned 0.2.0
-   and held with `nono pin` ([ADR-0027](adr/0027-pin-the-opencode-nono-pack-to-0.2.0.md)).
-4. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
+3. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
    that resolve into the repo are skipped.
-5. `stow --no-folding` links the dotfiles into `$HOME`.
-6. Two files that cannot be linked are reconciled instead: `~/.claude/settings.json`
+4. `stow --no-folding` links the dotfiles into `$HOME`.
+5. Two files that cannot be linked are reconciled instead: `~/.claude/settings.json`
    is deep-merged from a tracked template
    ([ADR-0019](adr/0019-merge-claude-user-settings.md)), and the opencode client
    config (`tui.jsonc` on 1.x, `cli.json` on 2.x) is copied from the matching
    tracked example when it is missing
    ([ADR-0026](adr/0026-seed-the-client-config-the-installed-version-reads.md)).
    Neither overwrites a file that already exists.
-7. opencode's state directories (`~/.opencode` plus the config, cache, data and
-   state ones) are created when missing. nono resolves `filesystem.allow`
-   against the filesystem as it stands when the sandbox is built, so on a fresh
-   machine every one of those grants is dropped and the first sandboxed launch
-   dies with `AlreadyExists: FileSystem.makeDirectory (~/.opencode)` — the run
-   leaves the directory behind, but after the grant was already resolved
-   without it. The `nolabs-ai/opencode` pack ships `bin/ensure-dirs.sh` for
-   exactly this, but declares it a `plugin` artifact and leaves it out of
-   `wiring`, so nothing executes it
-   ([ADR-0028](adr/0028-pre-create-opencode-state-dirs-at-bootstrap.md)).
-8. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
+6. Manual steps install iTerm2 and finish the account setup (Tailscale, `op`).
+
+Machines provisioned before [ADR-0031](adr/0031-retire-the-nono-sandbox.md)
+still carry nono, its packs, and Supacode's self-installed integration.
+`uninstall-nono-supacode.sh` at the repo root removes them once, backing up
+real state first. It is not part of `install.sh`: the bootstrap installs, it
+does not remove third-party software.
 
 ## Relationship to Other Repos
 
@@ -196,13 +174,15 @@ record that replaced them.
 | [0017](adr/0017-lazygit-from-brewfile-or-github-releases.md) | LazyGit as the git client, from Brewfile or GitHub releases | Accepted |
 | [0018](adr/0018-neovim-as-editor-variable.md) | Neovim as `$EDITOR`, with `vi` aliased to nvim | Accepted |
 | [0019](adr/0019-merge-claude-user-settings.md) | Merge Claude Code user settings instead of stowing them | Accepted |
-| [0020](adr/0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted |
-| [0021](adr/0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted |
-| [0022](adr/0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted |
+| [0020](adr/0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
+| [0021](adr/0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
+| [0022](adr/0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
 | [0023](adr/0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Superseded by [0024](adr/0024-seed-the-opencode-client-config.md) |
 | [0024](adr/0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Superseded by [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) |
 | [0025](adr/0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Accepted |
 | [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) | Seed the client config the installed version reads | Accepted |
-| [0027](adr/0027-pin-the-opencode-nono-pack-to-0.2.0.md) | Pin the opencode nono pack to 0.2.0 | Accepted |
-| [0028](adr/0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Accepted |
+| [0027](adr/0027-pin-the-opencode-nono-pack-to-0.2.0.md) | Pin the opencode nono pack to 0.2.0 | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
+| [0028](adr/0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
 | [0029](adr/0029-go-task-as-task-runner.md) | go-task as the task runner | Accepted |
+| [0030](adr/0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted |
+| [0031](adr/0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted |

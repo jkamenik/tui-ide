@@ -1,6 +1,6 @@
 # tui-ide-ADR-0021: Derive the nono profile from observed session use
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0031](0031-retire-the-nono-sandbox.md)
 **Date:** 2026-09-28
 
 ## Context

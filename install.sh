@@ -6,7 +6,7 @@ set -euo pipefail
 # Physical path: the backup guard below compares against realpath output.
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
-DOTFILES=(nvim herdr git zsh nono opencode-agents)
+DOTFILES=(nvim herdr git zsh opencode-agents)
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
@@ -86,51 +86,9 @@ elif [ "$os" = "Linux" ] && have apt-get; then
     # acknowledged deliberately rather than bypassed by accident.
     curl -fsSL https://claude.ai/install.sh | CLAUDE_INSTALL_ALLOW_SUDO=1 bash
   fi
-  # nono is the sandbox the agent CLIs run under (ADR-0020). It is not in apt
-  # either, but upstream ships a release .deb per architecture whose only
-  # dependency is a libc6 floor, so apt can install it as any other package.
-  if ! have nono; then
-    echo "==> Installing nono (not in apt) from GitHub releases"
-    # Resolve latest via the /releases/latest redirect: no API call, so no rate limit.
-    tag="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
-      https://github.com/nolabs-ai/nono/releases/latest | sed 's|.*/tag/||')"
-    # Debian architecture names, not the uname ones the lazygit tarball uses.
-    case "$(uname -m)" in
-      x86_64) deb_arch=amd64 ;;
-      aarch64 | arm64) deb_arch=arm64 ;;
-      *) echo "Unsupported architecture for nono: $(uname -m)" >&2; exit 1 ;;
-    esac
-    tmp="$(mktemp -d)"
-    curl -fsSL "https://github.com/nolabs-ai/nono/releases/download/${tag}/nono-cli_${tag#v}_${deb_arch}.deb" \
-      -o "$tmp/nono.deb"
-    # A local path rather than dpkg -i, so apt resolves the libc6 dependency
-    # instead of leaving a half-configured package behind.
-    (cd "$tmp" && sudo apt-get install -y ./nono.deb)
-    rm -rf "$tmp"
-  fi
 else
   echo "Need Homebrew or apt-get. Install Homebrew first: https://brew.sh" >&2
   exit 1
-fi
-
-# Pre-pull the nono packs for the two agents sandboxed in the zsh dotfiles.
-# `nono run --profile ...` offers to install a missing pack on a TTY and exits
-# with a hint when there is none, so pull them here, where the output is
-# visible, rather than surprising the user on the first agent launch. A registry
-# failure must not abort a bootstrap that has already installed everything else.
-#
-# The opencode pack is pinned to 0.2.0: 0.3.0 appends `--standalone`, an
-# opencode v2 flag that the pinned v1 line (ADR-0025) rejects, so a sandboxed
-# opencode prints help and exits at launch. `@0.2.0` selects the version and
-# `nono pin` keeps `nono update` from moving it back. See ADR-0027.
-if have nono; then
-  echo "==> Installing nono sandbox profiles"
-  nono pull nolabs-ai/claude ||
-    echo "    nono pull nolabs-ai/claude failed; re-run it before the first sandboxed session" >&2
-  nono pull nolabs-ai/opencode@0.2.0 ||
-    echo "    nono pull nolabs-ai/opencode@0.2.0 failed; re-run it before the first sandboxed session" >&2
-  nono pin nolabs-ai/opencode ||
-    echo "    nono pin nolabs-ai/opencode failed; run it so nono update keeps 0.2.0" >&2
 fi
 
 if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
@@ -233,29 +191,6 @@ if have opencode; then
     opencode_client="tui.jsonc"
     opencode_example="tui.jsonc.example"
   fi
-  # nono resolves filesystem.allow against the filesystem as it stands when the
-  # sandbox is built. On a fresh machine none of opencode's state dirs exist
-  # yet, so every one of them is dropped from the grant set, the first
-  # sandboxed launch fails with `AlreadyExists: FileSystem.makeDirectory
-  # (~/.opencode)`, and the run still leaves the dir behind - too late, because
-  # the grant was already resolved without it. The opencode pack ships
-  # bin/ensure-dirs.sh to pre-create exactly these six, but package.json
-  # declares it a `plugin` artifact and leaves it out of `wiring`, so nothing
-  # ever executes it. mkdir -p is idempotent, so this costs nothing on a machine
-  # where opencode has already run. See ADR-0028.
-  for opencode_state_dir in \
-    "$HOME/.opencode" \
-    "$HOME/.config/opencode" \
-    "$HOME/.cache/opencode" \
-    "$HOME/.local/share/opencode" \
-    "$HOME/.local/share/opentui" \
-    "$HOME/.local/state/opencode"
-  do
-    if [ ! -d "$opencode_state_dir" ]; then
-      mkdir -p "$opencode_state_dir"
-      echo "==> Created opencode state dir $opencode_state_dir"
-    fi
-  done
   # Custom themes are loaded by filename from ~/.config/opencode/themes/, so the
   # tracked Warm Burnout theme is seeded there and then left alone -- same
   # copy-once contract as the client config, because a theme is as editable as

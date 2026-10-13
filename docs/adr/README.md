@@ -28,17 +28,19 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0017](0017-lazygit-from-brewfile-or-github-releases.md) | LazyGit as the git client, from Brewfile or GitHub releases | Accepted | 2026-09-27 |
 | [0018](0018-neovim-as-editor-variable.md) | Neovim as `$EDITOR`, with `vi` aliased to nvim | Accepted | 2026-09-28 |
 | [0019](0019-merge-claude-user-settings.md) | Merge Claude Code user settings instead of stowing them | Accepted | 2026-09-28 |
-| [0020](0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Accepted | 2026-09-28 |
-| [0021](0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Accepted | 2026-09-28 |
-| [0022](0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Accepted | 2026-09-28 |
+| [0020](0020-sandbox-agent-clis-with-nono.md) | Sandbox the agent CLIs with nono | Superseded by [0031](0031-retire-the-nono-sandbox.md) | 2026-09-28 |
+| [0021](0021-derive-nono-profile-from-observed-use.md) | Derive the nono profile from observed session use | Superseded by [0031](0031-retire-the-nono-sandbox.md) | 2026-09-28 |
+| [0022](0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Superseded by [0031](0031-retire-the-nono-sandbox.md) | 2026-09-28 |
 | [0023](0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Superseded by [0024](0024-seed-the-opencode-client-config.md) | 2026-09-28 |
 | [0024](0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Superseded by [0026](0026-seed-the-client-config-the-installed-version-reads.md) | 2026-10-02 |
 | [0025](0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Accepted | 2026-10-02 |
 | [0026](0026-seed-the-client-config-the-installed-version-reads.md) | Seed the client config the installed version reads | Accepted | 2026-10-02 |
-| [0027](0027-pin-the-opencode-nono-pack-to-0.2.0.md) | Pin the opencode nono pack to 0.2.0 | Accepted | 2026-10-07 |
-| [0028](0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Accepted | 2026-10-06 |
+| [0027](0027-pin-the-opencode-nono-pack-to-0.2.0.md) | Pin the opencode nono pack to 0.2.0 | Superseded by [0031](0031-retire-the-nono-sandbox.md) | 2026-10-07 |
+| [0028](0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Superseded by [0031](0031-retire-the-nono-sandbox.md) | 2026-10-06 |
 | [0029](0029-go-task-as-task-runner.md) | go-task as the task runner | Accepted | 2026-10-07 |
 | [0030](0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted | 2026-10-08 |
+| [0031](0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted | 2026-10-13 |
+
 
 ## Format
 

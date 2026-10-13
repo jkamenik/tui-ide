@@ -1,6 +1,6 @@
 # tui-ide-ADR-0028: Pre-create opencode's state directories at bootstrap
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0031](0031-retire-the-nono-sandbox.md)
 **Date:** 2026-10-06
 
 ## Context

@@ -1,6 +1,6 @@
 # tui-ide-ADR-0027: Pin the opencode nono pack to 0.2.0
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0031](0031-retire-the-nono-sandbox.md)
 **Date:** 2026-10-07
 
 ## Context

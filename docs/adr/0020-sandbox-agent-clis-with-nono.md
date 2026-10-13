@@ -1,6 +1,6 @@
 # tui-ide-ADR-0020: Sandbox the agent CLIs with nono
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0031](0031-retire-the-nono-sandbox.md)
 **Date:** 2026-09-28
 
 ## Context

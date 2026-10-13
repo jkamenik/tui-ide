@@ -16,9 +16,9 @@ and the developer tools they need. It does not own scheduled execution
 | `Brewfile` | Shared toolchain (macOS and Linuxbrew) |
 | `Brewfile.macos` | macOS-only casks |
 | `install.sh` | Bootstrap: OS detect, `brew bundle`, backup, `stow` |
+| `uninstall-nono-supacode.sh` | Transitional one-shot cleanup for machines provisioned before [ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md); delete it once every machine has run it |
 | `dotfiles/<pkg>/...` | GNU Stow packages mapped onto `$HOME` |
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
-| `dotfiles/nono/...` | nono user profiles; `tui-ide-agent.json` extends the opencode pack with the paths this repo's sessions use, `tui-ide-agent-local.json` is the git-ignored machine overlay ([ADR-0021](docs/adr/0021-derive-nono-profile-from-observed-use.md)) |
 | `dotfiles/claude/...` | Claude Code settings template; tracked but not stowed, `install.sh` merges it into `~/.claude/settings.json` ([ADR-0019](docs/adr/0019-merge-claude-user-settings.md)) |
 | `dotfiles/opencode/...` | opencode client config templates, one per client-config spelling (`tui.jsonc.example` for 1.x, `cli.json.example` for 2.x), plus the tracked `themes/*.json`; tracked but not stowed, `install.sh` copies the one the installed version reads when it is missing, and the theme, both keyed to the same warm-burnout palette ([ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)) |
 | `dotfiles/opencode-agents/...` | opencode global `AGENTS.md`; portable, so stowed as a link rather than seeded from an example ([ADR-0030](docs/adr/0030-stow-the-global-opencode-agents-md.md)) |
@@ -76,20 +76,14 @@ herdr --version
 mosh --version
 stow --version
 git lfs version
-nono --version
 devcontainer --version
 claude --version
 opencode --version       # 1.x while the pin holds (ADR-0025)
-nono outdated            # nolabs-ai/opencode must be 0.2.0 (pinned) (ADR-0027)
-nono profile list              # tui-ide-agent must appear
+! command -v nono        # retired by ADR-0031
+! command -v supacode    # self-installed; cleaned by uninstall-nono-supacode.sh
 ```
 
-Re-derive the tracked nono grants from observed agent use rather than guessing:
-read the `part` table in `~/.local/share/opencode/opencode.db` for the files
-touched and binaries invoked, then check each candidate against the pack with
-`nono why -a "$PWD" --profile tui-ide-agent --path <p> --op read` before adding
-it. See [ADR-0021](docs/adr/0021-derive-nono-profile-from-observed-use.md).
-
-The agent wrappers set `HERDR_AGENT` on the `nono` command because `nono run`
-supervises rather than execs; without it herdr cannot see the agent and it
-disappears from the agents view ([ADR-0022](docs/adr/0022-label-sandboxed-agent-for-herdr.md)).
+`opencode` and `claude` are the plain binaries on `$PATH`: no zsh wrapper and
+no sandbox, so herdr labels the agent from the pane's foreground process and a
+session reaches everything the user can reach
+([ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md)).

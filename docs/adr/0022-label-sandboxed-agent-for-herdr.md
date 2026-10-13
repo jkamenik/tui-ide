@@ -1,6 +1,6 @@
 # tui-ide-ADR-0022: Label the sandboxed agent for herdr with `HERDR_AGENT`
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0031](0031-retire-the-nono-sandbox.md)
 **Date:** 2026-09-28
 
 ## Context
