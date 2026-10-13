@@ -26,7 +26,7 @@ if have brew; then
   brew tap cavanaug/tap-extras || true
   brew tap hashicorp/tap || true
   if brew trust --help >/dev/null 2>&1; then
-    for formula in anomalyco/tap/opencode cavanaug/tap-extras/mermaid-ascii hashicorp/tap/terraform; do
+    for formula in anomalyco/tap/opencode-v2 cavanaug/tap-extras/mermaid-ascii hashicorp/tap/terraform; do
       brew trust --formula "$formula"
     done
   fi
@@ -34,11 +34,6 @@ if have brew; then
   if [ "$os" = "Darwin" ]; then
     brew bundle --file="$REPO_DIR/Brewfile.macos"
   fi
-  # Hold opencode on the 1.x line (ADR-0025). `brew bundle` leaves pinned
-  # formulae out of its upgrades, so the pin is what stops the next run from
-  # moving the toolchain onto 2.x. Must follow bundle: `brew pin` fails on a
-  # formula that is not installed yet. Idempotent - re-pinning only warns.
-  brew pin anomalyco/tap/opencode
 elif [ "$os" = "Linux" ] && have apt-get; then
   echo "==> Homebrew not found; falling back to apt"
   sudo apt-get update

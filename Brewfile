@@ -10,10 +10,11 @@ brew "mosh"
 brew "herdr"
 # opencode comes from the tap, not homebrew-core: the tap ships both lines as
 # separate, conflicting formulae (anomalyco/tap/opencode = 1.x,
-# anomalyco/tap/opencode-v2 = 2.x) while core moved onto 2.x. We are on the 1.x
-# line for now (ADR-0025); install.sh pins the formula, which is what holds the
-# line, since `brew bundle` otherwise upgrades it on the next run.
-brew "anomalyco/tap/opencode"
+# anomalyco/tap/opencode-v2 = 2.x) while core moved onto 2.x. We track the 2.x
+# line (ADR-0032); the tap formula is the fresher 2.x channel. A custom provider
+# must name its runtime package on 2.x, or it fails with `Unsupported package`
+# (see README).
+brew "anomalyco/tap/opencode-v2"
 # devcontainer is the Dev Containers CLI. Homebrew installs it as the npm
 # package @devcontainers/cli, so it brings node in as a dependency.
 brew "devcontainer"

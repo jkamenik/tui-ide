@@ -110,22 +110,19 @@ ignores `cli.json`. v2 also migrates `tui.json` on first start but not
 move anything you want to keep by hand; `install.sh` prints a note naming
 whichever stale file it finds.
 
-opencode is pinned to the 1.x line, because the LLM gateway in use here does
-not serve v2. The `Brewfile` takes it from
-`anomalyco/tap/opencode` (1.x) rather than homebrew-core, which has moved to
-2.x, and `install.sh` runs `brew pin anomalyco/tap/opencode` so later runs leave
-it alone while the 1.x line keeps advancing (see
-[ADR-0025](docs/adr/0025-pin-opencode-to-the-1.x-line.md)). A machine holding
-the tap's 2.x formula must uninstall it first: `brew uninstall opencode-v2`,
-then run `install.sh`. To move to 2.x later, edit the `Brewfile` back to the
-unqualified `brew "opencode"`, drop the pin from `install.sh`, and
-`brew unpin anomalyco/tap/opencode`.
+opencode tracks the 2.x line ([ADR-0032](docs/adr/0032-track-the-opencode-2.x-line.md)).
+The `Brewfile` takes it from `anomalyco/tap/opencode-v2` rather than
+homebrew-core, which also ships 2.x but lags the tap. A machine still holding
+the 1.x formula must uninstall it first: `brew uninstall opencode`, then run
+`install.sh`. To go back to 1.x, edit the `Brewfile` back to
+`anomalyco/tap/opencode`, restore the `brew pin anomalyco/tap/opencode` line in
+`install.sh`, and `brew uninstall opencode-v2 && ./install.sh`.
 
 The agent config itself, `~/.config/opencode/opencode.json(c)`, stays
-machine-local and untracked. On 1.x a custom provider keeps working with no
-runtime package named, the way v1 defaulted to the OpenAI-compatible SDK. If you
-do move to 2.x, a custom provider needs its package named, or it fails with
-`Unsupported package for <provider>/<model>` until the entry carries
+machine-local and untracked. A custom provider must name its runtime package on
+2.x, where 1.x defaulted to the OpenAI-compatible SDK: without it the first
+request fails with `Unsupported package for <provider>/<model>`. The one-line
+addition to an existing v1-shaped provider entry is
 `"npm": "@ai-sdk/openai-compatible"`. The v2 spelling of the same provider is:
 
 ```jsonc

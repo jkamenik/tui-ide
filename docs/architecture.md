@@ -56,7 +56,7 @@ flowchart TB
 | Neovim | Editor | Human editing surface; agent lives in the opencode TUI. `$EDITOR`, and `vi` by alias |
 | devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet |
 | Claude Code | Agent CLI | Alternate agent surface; plain binary on `$PATH` since ADR-0031; user settings merged from a tracked template, hooks left local |
-| opencode | Agent CLI | Primary agent surface, plain binary on `$PATH` since ADR-0031; pinned to the 1.x line from `anomalyco/tap` because the corporate LLM gateway does not serve v2 ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)) |
+| opencode | Agent CLI | Primary agent surface, plain binary on `$PATH` since ADR-0031; on the 2.x line from `anomalyco/tap` ([ADR-0032](adr/0032-track-the-opencode-2.x-line.md)); a custom provider must name its runtime package on 2.x |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
@@ -103,8 +103,7 @@ flowchart TB
 - **Colors:** the iTerm2 preset ("Warm Burnout Dark") is the source of truth for
   the terminal, and herdr renders from it with `theme.name = "terminal"`.
   opencode instead names the tracked `themes/warm-burnout.json`, `theme =
-  "warm-burnout"` on the pinned 1.x line
-  ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)): `system` inherits the
+  "warm-burnout"`: `system` inherits the
   terminal palette, which leaves nothing to inherit under `opencode serve` on
   the always-on host, and the fallback is silent. The two are kept in step by
   hand rather than by derivation. opencode's file is machine-local, so
@@ -120,9 +119,8 @@ flowchart TB
 ## Install Flow
 
 1. `install.sh` detects the OS.
-2. `brew bundle` installs the toolchain (casks on macOS only) and
-   `brew pin anomalyco/tap/opencode` holds opencode on the 1.x line
-   ([ADR-0025](adr/0025-pin-opencode-to-the-1.x-line.md)).
+2. `brew bundle` installs the toolchain (casks on macOS only), which tracks
+   opencode on the 2.x line ([ADR-0032](adr/0032-track-the-opencode-2.x-line.md)).
 3. Conflicting files are backed up to `~/.dotfiles-backup/<timestamp>/`. Targets
    that resolve into the repo are skipped.
 4. `stow --no-folding` links the dotfiles into `$HOME`.
@@ -179,10 +177,11 @@ record that replaced them.
 | [0022](adr/0022-label-sandboxed-agent-for-herdr.md) | Label the sandboxed agent for herdr with `HERDR_AGENT` | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
 | [0023](adr/0023-seed-the-opencode-tui-config.md) | Seed the opencode TUI config from a tracked example | Superseded by [0024](adr/0024-seed-the-opencode-client-config.md) |
 | [0024](adr/0024-seed-the-opencode-client-config.md) | Seed the opencode client config from a tracked example | Superseded by [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) |
-| [0025](adr/0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Accepted |
+| [0025](adr/0025-pin-opencode-to-the-1.x-line.md) | Pin opencode to the 1.x line | Superseded by [0032](adr/0032-track-the-opencode-2.x-line.md) |
 | [0026](adr/0026-seed-the-client-config-the-installed-version-reads.md) | Seed the client config the installed version reads | Accepted |
 | [0027](adr/0027-pin-the-opencode-nono-pack-to-0.2.0.md) | Pin the opencode nono pack to 0.2.0 | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
 | [0028](adr/0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
 | [0029](adr/0029-go-task-as-task-runner.md) | go-task as the task runner | Accepted |
 | [0030](adr/0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted |
 | [0031](adr/0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted |
+| [0032](adr/0032-track-the-opencode-2.x-line.md) | Track the opencode 2.x line | Accepted |

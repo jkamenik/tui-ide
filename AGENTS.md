@@ -24,7 +24,7 @@ and the developer tools they need. It does not own scheduled execution
 | `dotfiles/opencode-agents/...` | opencode global `AGENTS.md`; portable, so stowed as a link rather than seeded from an example ([ADR-0030](docs/adr/0030-stow-the-global-opencode-agents-md.md)) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
-| `docs/runbooks/` | Gated per-machine try-it procedures, e.g. the opencode 1.x to 2.x upgrade ([ADR-0025](docs/adr/0025-pin-opencode-to-the-1.x-line.md) gate) |
+| `docs/runbooks/` | Gated per-machine try-it procedures, e.g. the opencode 1.x to 2.x upgrade ([ADR-0025](docs/adr/0025-pin-opencode-to-the-1.x-line.md) gate, now landed by [ADR-0032](docs/adr/0032-track-the-opencode-2.x-line.md)) |
 
 ## Conventions
 
@@ -79,7 +79,7 @@ stow --version
 git lfs version
 devcontainer --version
 claude --version
-opencode --version       # 1.x while the pin holds (ADR-0025)
+opencode --version       # 2.x (ADR-0032)
 ! command -v nono        # retired by ADR-0031
 ! command -v supacode    # self-installed; cleaned by uninstall-nono-supacode.sh
 ```
@@ -89,6 +89,8 @@ no sandbox, so herdr labels the agent from the pane's foreground process and a
 session reaches everything the user can reach
 ([ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md)).
 
-To test or land the opencode 2.x line on a machine, follow
-[docs/runbooks/upgrade-to-opencode2.md](docs/runbooks/upgrade-to-opencode2.md);
-until its gate passes, `opencode --version` is expected to report 1.x.
+The opencode 2.x switch was landed with
+[docs/runbooks/upgrade-to-opencode2.md](docs/runbooks/upgrade-to-opencode2.md)
+([ADR-0032](docs/adr/0032-track-the-opencode-2.x-line.md)), so
+`opencode --version` reports 2.x. The gate's failure mode was a config gap, not
+the gateway: a custom provider must name `"npm": "@ai-sdk/openai-compatible"`.
