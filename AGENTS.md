@@ -24,6 +24,7 @@ and the developer tools they need. It does not own scheduled execution
 | `dotfiles/opencode-agents/...` | opencode global `AGENTS.md`; portable, so stowed as a link rather than seeded from an example ([ADR-0030](docs/adr/0030-stow-the-global-opencode-agents-md.md)) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
+| `docs/runbooks/` | Gated per-machine try-it procedures, e.g. the opencode 1.x to 2.x upgrade ([ADR-0025](docs/adr/0025-pin-opencode-to-the-1.x-line.md) gate) |
 
 ## Conventions
 
@@ -87,3 +88,7 @@ opencode --version       # 1.x while the pin holds (ADR-0025)
 no sandbox, so herdr labels the agent from the pane's foreground process and a
 session reaches everything the user can reach
 ([ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md)).
+
+To test or land the opencode 2.x line on a machine, follow
+[docs/runbooks/upgrade-to-opencode2.md](docs/runbooks/upgrade-to-opencode2.md);
+until its gate passes, `opencode --version` is expected to report 1.x.
