@@ -9,6 +9,10 @@ obsidian-local.lua
 /opencode.json
 /opencode.jsonc
 
+# Aikido endpoint protection rewrites the stowed ~/.zshrc in place and leaves a
+# backup next to it, i.e. inside the repo.
+*.aikido-backup
+
 # herdr runtime state (rewritten in place, replaces stow links)
 dotfiles/herdr/.config/herdr/.plugins.lock
 dotfiles/herdr/.config/herdr/herdr-client.log
