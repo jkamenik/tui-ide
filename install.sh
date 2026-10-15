@@ -131,13 +131,47 @@ for pkg in "${DOTFILES[@]}"; do
   stow --dir="$REPO_DIR/dotfiles" --target="$HOME" --no-folding "$pkg"
 done
 
+# ~/.zshrc is machine-owned (ADR-0034). Installers and endpoint agents rewrite
+# it in place, and while it was a stow link those rewrites landed in the tracked
+# file. The tracked config now stows to ~/.config/zsh/tui-ide.zsh and ~/.zshrc
+# only sources it, so local patches stay out of the repo. A ~/.zshrc that is
+# already there is never overwritten: a link (the stale stow link this change
+# leaves behind, or any other) is moved to the backup dir and replaced, and a
+# real file gains the source line only if it does not already have it.
+zshrc="$HOME/.zshrc"
+zshrc_seed='# Owned by this machine, not the repo. The tracked, shared shell
+# config is stowed to ~/.config/zsh/tui-ide.zsh; source it here so machine-local
+# patches to this file stay untracked. See ADR-0034.
+if [ -f "$HOME/.config/zsh/tui-ide.zsh" ]; then
+  source "$HOME/.config/zsh/tui-ide.zsh"
+fi'
+zsh_source_line='[ -f "$HOME/.config/zsh/tui-ide.zsh" ] && source "$HOME/.config/zsh/tui-ide.zsh"'
+if [ -L "$zshrc" ]; then
+  mkdir -p "$BACKUP_DIR"
+  mv "$zshrc" "$BACKUP_DIR/.zshrc"
+  printf '%s\n' "$zshrc_seed" >"$zshrc"
+  echo "==> Replaced the ~/.zshrc link with a machine-owned file (link in $BACKUP_DIR)"
+elif [ ! -e "$zshrc" ]; then
+  printf '%s\n' "$zshrc_seed" >"$zshrc"
+  echo "==> Seeded ~/.zshrc to source ~/.config/zsh/tui-ide.zsh"
+elif grep -qF 'config/zsh/tui-ide.zsh' "$zshrc"; then
+  echo "==> ~/.zshrc already sources ~/.config/zsh/tui-ide.zsh"
+else
+  mkdir -p "$BACKUP_DIR"
+  cp "$zshrc" "$BACKUP_DIR/.zshrc"
+  printf '\n# Added by tui-ide install.sh: source the tracked shell config (ADR-0034).\n%s\n' \
+    "$zsh_source_line" >>"$zshrc"
+  echo "==> Appended the tracked shell config source to ~/.zshrc (previous in $BACKUP_DIR)"
+fi
+
 # Repo helper scripts live in bin/ and reach $PATH through a machine-specific
 # overlay: the absolute repo path differs per machine, so convention 4 forbids
-# tracking it in the stowed ~/.zshrc. That file sources ~/.zshrc.local, and this
-# seeds it so the scripts are reachable with no manual step. ~/.zshrc.local is a
-# real file the user may also edit, so an existing one is only appended to, and
-# only when it does not already reference this repo's bin (idempotent, backed up
-# first). ~/bin is left free for machine-local scripts. See ADR-0033.
+# tracking it in the tracked shell config. That file sources ~/.zshrc.local, and
+# this seeds it so the scripts are reachable with no manual step.
+# ~/.zshrc.local is a real file the user may also edit, so an existing one is
+# only appended to, and only when it does not already reference this repo's bin
+# (idempotent, backed up first). ~/bin is left free for machine-local scripts.
+# See ADR-0033.
 zshrc_local="$HOME/.zshrc.local"
 bin_path_line="export PATH=\"$REPO_DIR/bin:\$PATH\""
 if [ ! -e "$zshrc_local" ]; then

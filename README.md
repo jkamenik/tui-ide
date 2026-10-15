@@ -173,12 +173,25 @@ symlink and no copy to keep in sync. After changing settings in the GUI, review
 and commit the resulting working-tree change — `git add
 dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`.
 
+## Shell Config
+
+The shared zsh rc is tracked at `dotfiles/zsh/.config/zsh/tui-ide.zsh` and stowed
+to `~/.config/zsh/tui-ide.zsh`. `~/.zshrc` itself is machine-owned: `install.sh`
+seeds it — or migrates the old stow link — with a few lines that source the
+tracked file, and never overwrites an existing one. Tools that rewrite `~/.zshrc`
+in place (brew, nvm, gcloud, and endpoint agents such as Aikido) then touch an
+untracked file, so the repo tree stays clean
+([ADR-0034](docs/adr/0034-machine-owned-zshrc-sources-tracked-config.md)).
+
+Machine-specific shell values belong in `~/.zshrc` or the `~/.zshrc.local`
+overlay, never in the tracked rc.
+
 ## Repo Scripts
 
 Helper scripts live in `bin/` at the repo root. They are tracked but are **not**
 a stow package and do not populate `~/bin` (which stays free for machine-local
 scripts). Instead, `install.sh` puts the directory on `$PATH` by seeding
-`~/.zshrc.local` with `export PATH="<repo>/bin:$PATH"`; the stowed `~/.zshrc`
+`~/.zshrc.local` with `export PATH="<repo>/bin:$PATH"`; the tracked shell config
 sources that file. The overlay is machine-specific, so the repo path never lands
 in a tracked file ([ADR-0033](docs/adr/0033-repo-scripts-in-bin-on-path.md)).
 

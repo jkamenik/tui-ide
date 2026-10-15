@@ -60,6 +60,7 @@ flowchart TB
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
+| Shell config | Tracked rc | Stowed to `~/.config/zsh/tui-ide.zsh`; the machine-owned `~/.zshrc` sources it, so tools that rewrite `~/.zshrc` in place stay untracked ([ADR-0034](adr/0034-machine-owned-zshrc-sources-tracked-config.md)) |
 | LazyGit | Git client | TUI launched from Neovim with `<leader>gg` |
 | Terraform, Ansible, gcloud | Cloud & IaC | Provisioning and config management against GCP |
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
@@ -81,12 +82,16 @@ flowchart TB
   write into the repo tree. The backup step resolves each target with
   `realpath` and skips anything inside the repo, so a leftover directory fold
   can never make `install.sh` move a tracked file out of the tree.
+- **Shell:** the shared rc is tracked at `dotfiles/zsh/.config/zsh/tui-ide.zsh`
+  and stowed to `~/.config/zsh/tui-ide.zsh`. `~/.zshrc` is machine-owned and only
+  sources it, so a tool that rewrites `~/.zshrc` in place (Aikido, brew, nvm,
+  gcloud, ...) cannot dirty the repo ([ADR-0034](adr/0034-machine-owned-zshrc-sources-tracked-config.md)).
 - **Overlays:** machine-specific values live in `*.local` files that are
   git-ignored. `dotfiles/git/.gitconfig` includes `~/.gitconfig.local`, which
   holds identity and the 1Password SSH signing agent path.
 - **Repo scripts:** `bin/` at the repo root holds tracked helper scripts
   (`git-cleanup`). `install.sh` puts it on `$PATH` by seeding a generated
-  `~/.zshrc.local`, which the stowed `.zshrc` sources, so the machine-specific
+  `~/.zshrc.local`, which the tracked shell config sources, so the machine-specific
   repo path stays untracked. `~/bin` is left for machine-local scripts
   ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md)).
 - **Secrets:** the 1Password CLI (`op`) provides credentials. No secret is ever
@@ -192,3 +197,4 @@ record that replaced them.
 | [0031](adr/0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted |
 | [0032](adr/0032-track-the-opencode-2.x-line.md) | Track the opencode 2.x line | Accepted |
 | [0033](adr/0033-repo-scripts-in-bin-on-path.md) | Repo helper scripts in `bin/` on `$PATH` through a local overlay | Accepted |
+| [0034](adr/0034-machine-owned-zshrc-sources-tracked-config.md) | Let the machine own `~/.zshrc` and source a tracked shell config | Accepted |

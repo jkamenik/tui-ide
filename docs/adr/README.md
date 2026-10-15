@@ -42,6 +42,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0031](0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted | 2026-10-13 |
 | [0032](0032-track-the-opencode-2.x-line.md) | Track the opencode 2.x line | Accepted | 2026-10-13 |
 | [0033](0033-repo-scripts-in-bin-on-path.md) | Repo helper scripts live in `bin/` and reach `$PATH` through a local overlay | Accepted | 2026-10-14 |
+| [0034](0034-machine-owned-zshrc-sources-tracked-config.md) | Let the machine own `~/.zshrc` and source a tracked shell config | Accepted | 2026-10-15 |
 
 
 ## Format

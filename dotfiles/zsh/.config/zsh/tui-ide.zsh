@@ -1,3 +1,9 @@
+# Tracked shell config for the tui-ide toolchain. install.sh stows this file to
+# ~/.config/zsh/tui-ide.zsh, and the machine-owned ~/.zshrc sources it, so a tool
+# that rewrites ~/.zshrc in place (Aikido, brew, nvm, gcloud, ...) never dirties
+# tracked content. Keep machine-specific values out of here (convention 4); put
+# them in ~/.zshrc or ~/.zshrc.local instead. See ADR-0034.
+#
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:$HOME/.local/bin:$PATH
 
@@ -139,7 +145,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 
 # Machine-local shell overrides. install.sh writes this repo's bin/ (git-cleanup
-# and friends) onto $PATH here, because the absolute repo path differs per
-# machine and must not be tracked (convention 4). Sourced last so a local
-# override can also adjust anything above. See ADR-0033.
+# and friends) onto $PATH in ~/.zshrc.local, because the absolute repo path
+# differs per machine and must not be tracked (convention 4). Sourced last so a
+# local override can also adjust anything above. See ADR-0033.
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
