@@ -26,3 +26,13 @@ Example:
 ```
 Assisted-by: LLM deepseek-v4.1-flash opencode
 ```
+
+## Pull Requests
+
+- Open pull requests in **draft** mode. Only the user takes a PR out of draft;
+  leaving that to them avoids the "ready for review" churn and the notification
+  emails sent each time the description is edited while it is still being
+  written.
+- Keep the PR description as terse as it can be while still carrying the *why*
+  of the change. Link the Jira ticket and any related PRs instead of restating
+  them; a reader who wants more detail can follow the links.
