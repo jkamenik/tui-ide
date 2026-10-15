@@ -20,10 +20,15 @@ lazygit, terraform, go-task.
 macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
 installed manually.
 
-Dotfiles via GNU Stow: zsh, git, nvim, herdr. The opencode client config is
+Dotfiles via GNU Stow: zsh, git, nvim, herdr, opencode-agents,
+opencode-plugins. The opencode client config is
 machine-local, so `install.sh` seeds the file the installed opencode version
 reads from a tracked example on a fresh machine instead of linking it (see
 [ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)).
+The portable opencode global files — the `AGENTS.md` rules and the herdr
+worktree-open plugin — are stowed as links instead
+([ADR-0030](docs/adr/0030-stow-the-global-opencode-agents-md.md),
+[ADR-0036](docs/adr/0036-stow-the-herdr-worktree-open-plugin.md)).
 Claude Code user settings are merged from a tracked template rather than stowed,
 because the hooks iTerm2 and herdr install there are machine-specific and Claude
 Code has no user-level overlay file (see
@@ -271,6 +276,7 @@ git lfs version
 devcontainer --version
 claude --version
 test -x bin/git-cleanup          # repo helper script (ADR-0033)
+test -L ~/.config/opencode/plugins/herdr-worktree-open.js   # herdr worktree plugin (ADR-0036)
 ! command -v nono                # retired by ADR-0031
 ! command -v supacode             # removed; the CLI link may need 'sudo rm /usr/local/bin/supacode'
 ```

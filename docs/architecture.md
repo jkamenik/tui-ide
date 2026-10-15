@@ -57,6 +57,7 @@ flowchart TB
 | devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet |
 | Claude Code | Agent CLI | Alternate agent surface; plain binary on `$PATH` since ADR-0031; user settings merged from a tracked template, hooks left local |
 | opencode | Agent CLI | Primary agent surface, plain binary on `$PATH` since ADR-0031; on the 2.x line from `anomalyco/tap` ([ADR-0032](adr/0032-track-the-opencode-2.x-line.md)); a custom provider must name its runtime package on 2.x |
+| opencode plugins | herdr worktree integration | The tracked `herdr-worktree-open.js` is stowed into `~/.config/opencode/plugins/` and opens opencode-created worktrees in herdr's sidebar ([ADR-0036](adr/0036-stow-the-herdr-worktree-open-plugin.md)) |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
 | GNU Stow | Dotfile manager | `dotfiles/<pkg>` symlinked into `$HOME` |
@@ -133,6 +134,13 @@ flowchart TB
   package, `dotfiles/opencode-agents/`, and stowed as a link rather than seeded
   from an example, which keeps one source of truth with no copy-once drift
   ([ADR-0030](adr/0030-stow-the-global-opencode-agents-md.md)).
+- **opencode plugins:** opencode auto-loads plugins from
+  `~/.config/opencode/plugins/`. The tracked herdr worktree-open plugin
+  (`dotfiles/opencode-plugins/`) is stowed there as a file link and opens the Git
+  worktrees opencode creates in herdr's sidebar, which otherwise hides a linked
+  worktree until it is opened by hand. It is portable, so it is linked like the
+  `AGENTS.md` above; herdr's own integration files in that directory stay
+  machine-owned ([ADR-0036](adr/0036-stow-the-herdr-worktree-open-plugin.md)).
 
 ## Install Flow
 
@@ -206,3 +214,4 @@ record that replaced them.
 | [0033](adr/0033-repo-scripts-in-bin-on-path.md) | Repo helper scripts in `bin/` on `$PATH` through a local overlay | Accepted |
 | [0034](adr/0034-machine-owned-zshrc-sources-tracked-config.md) | Let the machine own `~/.zshrc` and source a tracked shell config | Accepted |
 | [0035](adr/0035-machine-owned-config-includes-tracked-config.md) | Device-local config files are machine-owned and include a tracked config | Accepted |
+| [0036](adr/0036-stow-the-herdr-worktree-open-plugin.md) | Stow the herdr worktree-open opencode plugin | Accepted |
