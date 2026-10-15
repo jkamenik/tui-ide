@@ -65,6 +65,7 @@ flowchart TB
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
 | obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled. Optional: loaded only when the local overlay names a workspace that exists on disk |
 | mini.map | Minimap | Floating buffer overview on the right, `<leader>vm`; search and diagnostic highlights |
+| `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md)) |
 
 ## Cross-Machine Model
 
@@ -83,6 +84,11 @@ flowchart TB
 - **Overlays:** machine-specific values live in `*.local` files that are
   git-ignored. `dotfiles/git/.gitconfig` includes `~/.gitconfig.local`, which
   holds identity and the 1Password SSH signing agent path.
+- **Repo scripts:** `bin/` at the repo root holds tracked helper scripts
+  (`git-cleanup`). `install.sh` puts it on `$PATH` by seeding a generated
+  `~/.zshrc.local`, which the stowed `.zshrc` sources, so the machine-specific
+  repo path stays untracked. `~/bin` is left for machine-local scripts
+  ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md)).
 - **Secrets:** the 1Password CLI (`op`) provides credentials. No secret is ever
   committed. The agent CLIs run as the user with no boundary since
   [ADR-0031](adr/0031-retire-the-nono-sandbox.md) retired nono, so `~/.ssh`,
@@ -185,3 +191,4 @@ record that replaced them.
 | [0030](adr/0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted |
 | [0031](adr/0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted |
 | [0032](adr/0032-track-the-opencode-2.x-line.md) | Track the opencode 2.x line | Accepted |
+| [0033](adr/0033-repo-scripts-in-bin-on-path.md) | Repo helper scripts in `bin/` on `$PATH` through a local overlay | Accepted |

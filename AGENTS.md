@@ -15,7 +15,8 @@ and the developer tools they need. It does not own scheduled execution
 |------|----------------|
 | `Brewfile` | Shared toolchain (macOS and Linuxbrew) |
 | `Brewfile.macos` | macOS-only casks |
-| `install.sh` | Bootstrap: OS detect, `brew bundle`, backup, `stow` |
+| `install.sh` | Bootstrap: OS detect, `brew bundle`, backup, `stow`; also seeds `~/.zshrc.local` so `bin/` is on `$PATH` ([ADR-0033](docs/adr/0033-repo-scripts-in-bin-on-path.md)) |
+| `bin/` | Repo helper scripts (e.g. `git-cleanup`); tracked, not stowed, put on `$PATH` via the `~/.zshrc.local` overlay ([ADR-0033](docs/adr/0033-repo-scripts-in-bin-on-path.md)) |
 | `uninstall-nono-supacode.sh` | Transitional one-shot cleanup for machines provisioned before [ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md); delete it once every machine has run it |
 | `dotfiles/<pkg>/...` | GNU Stow packages mapped onto `$HOME` |
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
@@ -80,6 +81,7 @@ git lfs version
 devcontainer --version
 claude --version
 opencode --version       # 2.x (ADR-0032)
+test -x bin/git-cleanup  # repo helper script (ADR-0033)
 ! command -v nono        # retired by ADR-0031
 ! command -v supacode    # self-installed; cleaned by uninstall-nono-supacode.sh
 ```

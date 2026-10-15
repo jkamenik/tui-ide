@@ -173,6 +173,27 @@ symlink and no copy to keep in sync. After changing settings in the GUI, review
 and commit the resulting working-tree change — `git add
 dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`.
 
+## Repo Scripts
+
+Helper scripts live in `bin/` at the repo root. They are tracked but are **not**
+a stow package and do not populate `~/bin` (which stays free for machine-local
+scripts). Instead, `install.sh` puts the directory on `$PATH` by seeding
+`~/.zshrc.local` with `export PATH="<repo>/bin:$PATH"`; the stowed `~/.zshrc`
+sources that file. The overlay is machine-specific, so the repo path never lands
+in a tracked file ([ADR-0033](docs/adr/0033-repo-scripts-in-bin-on-path.md)).
+
+On a machine that already has a `~/.zshrc.local`, `install.sh` appends the line
+only when it is missing (backing the file up first). To do it by hand, add
+`export PATH="/path/to/tui-ide/bin:$PATH"` to `~/.zshrc.local` (or `~/.zshrc`).
+
+- `git-cleanup [branch]` — fetch with prune, switch to `branch` (default: the
+  remote's default branch), fast-forward it, then delete local branches whose
+  upstream is gone (merged or squash-merged on the remote). It refuses to run on
+  a dirty tree and uses `-D` because a squash merge leaves a branch "unmerged"
+  to git. On `$PATH` it is also available as the Git subcommand
+  `git cleanup [branch]`. Based on the "Cleanup to a given branch" tip at
+  <https://kameniksolutions.com/resources/git-tips-and-tricks/#cleanup-to-a-given-branch>.
+
 ## Manual Steps (Not Automated)
 
 - Tailscale: install and join the tailnet (cask on macOS, apt repo on Linux).
@@ -231,6 +252,7 @@ task --version
 git lfs version
 devcontainer --version
 claude --version
+test -x bin/git-cleanup          # repo helper script (ADR-0033)
 ! command -v nono                # retired by ADR-0031
 ! command -v supacode             # removed; the CLI link may need 'sudo rm /usr/local/bin/supacode'
 ```

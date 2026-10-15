@@ -131,6 +131,36 @@ for pkg in "${DOTFILES[@]}"; do
   stow --dir="$REPO_DIR/dotfiles" --target="$HOME" --no-folding "$pkg"
 done
 
+# Repo helper scripts live in bin/ and reach $PATH through a machine-specific
+# overlay: the absolute repo path differs per machine, so convention 4 forbids
+# tracking it in the stowed ~/.zshrc. That file sources ~/.zshrc.local, and this
+# seeds it so the scripts are reachable with no manual step. ~/.zshrc.local is a
+# real file the user may also edit, so an existing one is only appended to, and
+# only when it does not already reference this repo's bin (idempotent, backed up
+# first). ~/bin is left free for machine-local scripts. See ADR-0033.
+zshrc_local="$HOME/.zshrc.local"
+bin_path_line="export PATH=\"$REPO_DIR/bin:\$PATH\""
+if [ ! -e "$zshrc_local" ]; then
+  cat >"$zshrc_local" <<EOF
+# Local shell overrides (machine-specific; not tracked). install.sh keeps this
+# repo's bin/ on \$PATH here so the path stays out of the tracked .zshrc.
+# See ADR-0033.
+$bin_path_line
+EOF
+  echo "==> Seeded ~/.zshrc.local (adds $REPO_DIR/bin to \$PATH)"
+elif grep -qF "$REPO_DIR/bin" "$zshrc_local"; then
+  echo "==> ~/.zshrc.local already puts $REPO_DIR/bin on \$PATH"
+else
+  mkdir -p "$BACKUP_DIR"
+  cp "$zshrc_local" "$BACKUP_DIR/.zshrc.local"
+  {
+    echo
+    echo "# Added by tui-ide install.sh: keep this repo's bin/ on \$PATH (ADR-0033)."
+    echo "$bin_path_line"
+  } >>"$zshrc_local"
+  echo "==> Appended $REPO_DIR/bin to ~/.zshrc.local (previous in $BACKUP_DIR)"
+fi
+
 # Claude Code user settings are merged, not stowed. `~/.claude/settings.json` is
 # the only user-level settings file and has no local-overlay sibling, so the
 # hooks iTerm2 and herdr install into it (absolute paths, machine-specific)

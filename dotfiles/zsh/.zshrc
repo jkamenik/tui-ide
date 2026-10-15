@@ -137,3 +137,9 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+
+# Machine-local shell overrides. install.sh writes this repo's bin/ (git-cleanup
+# and friends) onto $PATH here, because the absolute repo path differs per
+# machine and must not be tracked (convention 4). Sourced last so a local
+# override can also adjust anything above. See ADR-0033.
+[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"

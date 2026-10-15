@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+#
+# git-cleanup [branch]
+#
+# Bring a checkout back in sync with the remote and delete local branches whose
+# upstream is gone (merged, or squash-merged, on the remote).
+#
+# With no argument the branch defaults to the remote's default branch as
+# reported by origin/HEAD, falling back to main, then master. The branch is
+# checked out and fast-forwarded from the remote before stale branches are
+# pruned, so the cleanup runs from a known-good tip.
+#
+# On $PATH as `git-cleanup`, Git also exposes it as the subcommand
+# `git cleanup [branch]`.
+#
+# Based on the "Cleanup to a given branch" tip:
+#   https://kameniksolutions.com/resources/git-tips-and-tricks/#cleanup-to-a-given-branch
+set -euo pipefail
+
+# Keep git from opening a pager (log, branch, ...); this may run unattended.
+export GIT_PAGER=cat
+unset PAGER
+
+die() { echo "git-cleanup: $*" >&2; exit 1; }
+info() { echo "==> $*"; }
+
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "not a git repository"
+
+# Resolve the target branch: explicit argument, else origin/HEAD, else a local
+# main/master.
+target="${1:-}"
+if [ -z "$target" ]; then
+  target="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  target="${target#origin/}"
+fi
+if [ -z "$target" ]; then
+  for candidate in main master; do
+    if git show-ref --verify --quiet "refs/heads/$candidate"; then
+      target="$candidate"
+      break
+    fi
+  done
+fi
+[ -n "$target" ] || die "could not determine a default branch; pass one explicitly"
+
+# A dirty tree makes the checkout either fail halfway or carry changes across.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  die "working tree has uncommitted changes; commit or stash them first"
+fi
+
+info "Fetching and pruning remote-tracking refs"
+git fetch --prune
+
+info "Switching to $target and updating"
+git checkout "$target"
+# --ff-only so a diverged local branch fails loudly here instead of leaving an
+# accidental merge commit behind.
+if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+  git pull --ff-only
+else
+  echo "    $target has no upstream; skipping pull"
+fi
+
+# List local branches whose upstream is gone. for-each-ref is precise where
+# grepping `git branch -v` output is not: `%(upstream:track)` prints exactly
+# `[gone]`, and no branch name or subject can be mistaken for it.
+info "Checking for local branches with a gone upstream"
+gone="$(git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
+  | awk -v current="$target" '$2 == "[gone]" && $1 != current { print $1 }')"
+if [ -n "$gone" ]; then
+  # -D, not -d: a squash merge leaves the branch "unmerged" from git's point of
+  # view, so -d would refuse to delete it.
+  while IFS= read -r branch; do
+    [ -n "$branch" ] || continue
+    echo "    deleting $branch"
+    git branch -D "$branch"
+  done <<<"$gone"
+else
+  echo "    none"
+fi
+
+# If something left us off the target, say so rather than reporting success.
+current="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$current" != "$target" ]; then
+  echo "git-cleanup: left on $current, manual cleanup may be required" >&2
+  git branch
+  exit 1
+fi
+
+info "Done; on $target"

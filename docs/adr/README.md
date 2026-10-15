@@ -41,6 +41,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0030](0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted | 2026-10-08 |
 | [0031](0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted | 2026-10-13 |
 | [0032](0032-track-the-opencode-2.x-line.md) | Track the opencode 2.x line | Accepted | 2026-10-13 |
+| [0033](0033-repo-scripts-in-bin-on-path.md) | Repo helper scripts live in `bin/` and reach `$PATH` through a local overlay | Accepted | 2026-10-14 |
 
 
 ## Format
