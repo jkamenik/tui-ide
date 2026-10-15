@@ -1,0 +1,28 @@
+# Tracked git config for the tui-ide toolchain. install.sh stows this file to
+# ~/.config/git/tui-ide.gitconfig, and the machine-owned ~/.gitconfig includes
+# it, so a tool that rewrites ~/.gitconfig in place (Aikido, ...) never dirties
+# tracked content. Keep machine-specific values out of here (convention 4); put
+# them in ~/.gitconfig or ~/.gitconfig.local. See ADR-0035.
+#
+# Machine-specific identity and signing live in ~/.gitconfig.local (not tracked;
+# see .gitconfig.local.example).
+[include]
+	path = ~/.gitconfig.local
+
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+
+[user]
+	name = John Kamenik
+
+[gpg]
+	format = ssh
+
+[commit]
+	gpgsign = true
+
+[pull]
+	rebase = false

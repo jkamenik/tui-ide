@@ -173,18 +173,23 @@ symlink and no copy to keep in sync. After changing settings in the GUI, review
 and commit the resulting working-tree change — `git add
 dotfiles/iterm2/.config/iterm2/AppSupport/com.googlecode.iterm2.plist`.
 
-## Shell Config
+## Device-local config
 
-The shared zsh rc is tracked at `dotfiles/zsh/.config/zsh/tui-ide.zsh` and stowed
-to `~/.config/zsh/tui-ide.zsh`. `~/.zshrc` itself is machine-owned: `install.sh`
-seeds it — or migrates the old stow link — with a few lines that source the
-tracked file, and never overwrites an existing one. Tools that rewrite `~/.zshrc`
-in place (brew, nvm, gcloud, and endpoint agents such as Aikido) then touch an
-untracked file, so the repo tree stays clean
-([ADR-0034](docs/adr/0034-machine-owned-zshrc-sources-tracked-config.md)).
+A config file that a tool (or an installer/endpoint agent) rewrites in place is
+machine-owned: the tracked config is stowed beside it and the machine file
+includes or sources it, so the rewrite lands in an untracked file and the repo
+tree stays clean
+([ADR-0035](docs/adr/0035-machine-owned-config-includes-tracked-config.md)).
+`install.sh` seeds the machine file, or migrates the old stow link, and never
+overwrites an existing one.
 
-Machine-specific shell values belong in `~/.zshrc` or the `~/.zshrc.local`
-overlay, never in the tracked rc.
+- **zsh:** tracked `dotfiles/zsh/.config/zsh/tui-ide.zsh` (stowed to
+  `~/.config/zsh/tui-ide.zsh`); `~/.zshrc` sources it. Machine-specific values go
+  in `~/.zshrc` or the `~/.zshrc.local` overlay
+  ([ADR-0034](docs/adr/0034-machine-owned-zshrc-sources-tracked-config.md)).
+- **git:** tracked `dotfiles/git/.config/git/tui-ide.gitconfig` (stowed to
+  `~/.config/git/tui-ide.gitconfig`); `~/.gitconfig` includes it, and the
+  tracked file includes `~/.gitconfig.local` for identity and signing.
 
 ## Repo Scripts
 

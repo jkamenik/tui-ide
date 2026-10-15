@@ -46,6 +46,13 @@ and the developer tools they need. It does not own scheduled execution
 7. **No `git worktrees`.** The stow symlinks under `$HOME` resolve to the main
    checkout's absolute path, so only main is "live". A worktree cannot serve
    live config; use branches and merge into main instead.
+8. **A file a tool rewrites in place is machine-owned.** Do not stow-link it:
+   the machine owns the file at the tool's expected path, and the tracked config
+   is delivered as a separate file the machine file includes or sources (git
+   `[include]`, zsh `source`). `install.sh` seeds or migrates it, backing up
+   first. When the tool has no include mechanism, fall back to the copy-once
+   template or the merge-from-template contract
+   ([ADR-0035](docs/adr/0035-machine-owned-config-includes-tracked-config.md)).
 
 ## Making Changes
 
@@ -82,6 +89,8 @@ devcontainer --version
 claude --version
 opencode --version       # 2.x (ADR-0032)
 test -x bin/git-cleanup  # repo helper script (ADR-0033)
+test ! -L ~/.zshrc       # machine-owned; sources the tracked rc (ADR-0034)
+test ! -L ~/.gitconfig   # machine-owned; includes the tracked config (ADR-0035)
 ! command -v nono        # retired by ADR-0031
 ! command -v supacode    # self-installed; cleaned by uninstall-nono-supacode.sh
 ```

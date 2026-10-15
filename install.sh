@@ -164,6 +164,30 @@ else
   echo "==> Appended the tracked shell config source to ~/.zshrc (previous in $BACKUP_DIR)"
 fi
 
+# ~/.gitconfig is machine-owned for the same reason as ~/.zshrc (ADR-0035):
+# tools rewrite it in place. The tracked config stows to
+# ~/.config/git/tui-ide.gitconfig and ~/.gitconfig only includes it, under the
+# same never-overwrite contract -- a link is moved to the backup dir and
+# replaced; a real file gains the include only when it is absent.
+gitconfig="$HOME/.gitconfig"
+gitconfig_seed=$'# Owned by this machine, not the repo. The tracked, shared git config is\n# stowed to ~/.config/git/tui-ide.gitconfig; include it here so machine-local\n# patches to this file stay untracked. See ADR-0035.\n[include]\n\tpath = ~/.config/git/tui-ide.gitconfig'
+if [ -L "$gitconfig" ]; then
+  mkdir -p "$BACKUP_DIR"
+  mv "$gitconfig" "$BACKUP_DIR/.gitconfig"
+  printf '%s\n' "$gitconfig_seed" >"$gitconfig"
+  echo "==> Replaced the ~/.gitconfig link with a machine-owned file (link in $BACKUP_DIR)"
+elif [ ! -e "$gitconfig" ]; then
+  printf '%s\n' "$gitconfig_seed" >"$gitconfig"
+  echo "==> Seeded ~/.gitconfig to include ~/.config/git/tui-ide.gitconfig"
+elif grep -qF 'config/git/tui-ide.gitconfig' "$gitconfig"; then
+  echo "==> ~/.gitconfig already includes ~/.config/git/tui-ide.gitconfig"
+else
+  mkdir -p "$BACKUP_DIR"
+  cp "$gitconfig" "$BACKUP_DIR/.gitconfig"
+  printf '\n# Added by tui-ide install.sh: include the tracked git config (ADR-0035).\n[include]\n\tpath = ~/.config/git/tui-ide.gitconfig\n' >>"$gitconfig"
+  echo "==> Appended the tracked git config include to ~/.gitconfig (previous in $BACKUP_DIR)"
+fi
+
 # Repo helper scripts live in bin/ and reach $PATH through a machine-specific
 # overlay: the absolute repo path differs per machine, so convention 4 forbids
 # tracking it in the tracked shell config. That file sources ~/.zshrc.local, and
