@@ -1073,7 +1073,7 @@
 			</array>
 			<key>Keyboard Map</key>
 			<dict>
-				<key>0xd-0x20000-0x24</key>
+				<key>0xd-0x20000-0x24-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
