@@ -88,6 +88,25 @@ check-models clean
 - **Level 2 (Tool Calling):** Validates structured function calling (`get_weather` test). Required for OpenCode agent workflows.
 - **Level 3 (OpenCode Harness):** Validates invocation through `opencode run -m <model>`.
 
+Providers configured with a `baseURL` (custom gateways such as Bifrost) are
+probed with direct HTTP calls. Built-in providers like OpenCode Go expose no
+callable endpoint, so Levels 1-2 run through `opencode run --format json` and
+read the JSON event stream: a `type:"error"` event (unknown reference,
+`provider.no-route`, upstream region/policy blocks, quota) fails the model
+even though `opencode models` advertises it. Nothing auto-passes.
+
+## Upgrading From Pre-2026-10 Caches
+
+Early versions tested CLI-discovered models vacuously and keyed cache entries
+by a synthetic `default/` provider instead of the real reference. After
+upgrading, start fresh once:
+
+```bash
+check-models clean
+check-models            # full sweep; every verdict is now a real probe
+check-models report
+```
+
 ## Fail-Fast Canary Strategy
 
 Models are grouped into classes (e.g., `openrouter/deepseek`, `vertex/claude`, `vertex/gemini`, `mimo`, `minimax`). The cheapest chat-eligible model is tested first as the canary. If the canary fails due to permissions, guardrail policies, route 404, or missing upstream keys, the entire class is marked failed and skipped, sparing time, quota, and rate limits.

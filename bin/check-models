@@ -7,6 +7,15 @@
  *   - Level 2: Tool calling (function calling)
  *   - Level 3: Full OpenCode CLI harness
  *
+ * Providers configured with a baseURL (custom gateways such as Bifrost) are
+ * probed with direct HTTP calls. Built-in providers (opencode-go) have no
+ * directly callable endpoint, so every level runs through
+ * `opencode run --format json` and inspects the JSON event stream: an
+ * "error" event (no route, upstream/region block, quota) means the model
+ * does not work on this machine no matter what the discovery list
+ * advertises. Results are keyed by the exact provider/model reference that
+ * `opencode models` prints, so recommendations are usable as written.
+ *
  * Models are grouped into classes (by vendor/namespace and family).
  * The cheapest "canary" model of each class is tested first; if it fails,
  * the entire class is marked failed and skipped to avoid wasting tokens,
@@ -264,6 +273,34 @@ function calculateBang(m) {
   return Math.min(100, baseScore + verBonus + stabilityBonus + ctxBonus + toolBonus);
 }
 
+// Parse `opencode run --format json` stdout into a pass/fail verdict.
+// Built-in providers expose no directly callable endpoint, so the CLI harness
+// is the only honest test path: broken routes emit a JSON "error" event
+// (provider.no-route for an unknown reference, upstream messages such as
+// "This Go model requires Global regions") instead of failing silently.
+function parseCliProbe(stdout, expectTool) {
+  const events = [];
+  for (const line of String(stdout || '').split('\n')) {
+    const t = line.trim();
+    if (!t.startsWith('{')) continue;
+    try { events.push(JSON.parse(t)); } catch { /* skip partial lines */ }
+  }
+  if (events.length === 0) {
+    return { pass: false, error: 'No JSON events from opencode run' };
+  }
+  const errEv = events.find(e => e.type === 'error');
+  if (errEv) {
+    const msg = errEv.error?.message || errEv.error?.type || 'run error';
+    return { pass: false, error: String(msg).split('\n')[0] };
+  }
+  const toolUsed = events.some(e => e.type === 'tool_use' || e.part?.type === 'tool');
+  const gotText = events.some(e =>
+    (e.type === 'text' || e.part?.type === 'text') && (e.part?.text || '').trim().length > 0);
+  if (expectTool && !toolUsed) return { pass: false, error: 'No tool call executed' };
+  if (!toolUsed && !gotText) return { pass: false, error: 'No response produced' };
+  return { pass: true, toolUsed };
+}
+
 class ModelChecker {
   constructor(options = {}) {
     this.options = options;
@@ -375,7 +412,7 @@ class ModelChecker {
     try {
       const out = execSync('opencode models', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
       const lines = out.split('\n').map(l => l.trim()).filter(Boolean);
-      return lines
+      const models = lines
         .map(line => {
           let id = line;
           let prov = providerName || 'default';
@@ -384,21 +421,31 @@ class ModelChecker {
             prov = parts[0];
             id = parts.slice(1).join('/');
           }
-          const catalog = KNOWN_MODELS_CATALOG[id] || {};
+          // An unknown model has no pricing here, not $0: fabricating zeros
+          // from an empty catalog made every CLI-discovered model look free
+          // and inverted the frugal ranking. Unknown prices as expensive.
+          const catalog = KNOWN_MODELS_CATALOG[id];
           return {
             id,
             fullId: line,
             provider: prov,
-            name: catalog.name || id,
+            name: catalog?.name || id,
             class: classifyModel(id),
-            contextLength: catalog.context || 0,
-            maxOutput: catalog.output || 0,
+            contextLength: catalog?.context || 0,
+            maxOutput: catalog?.output || 0,
             pricing: normalizePricing(catalog),
-            supportsTools: catalog.tools ?? true,
-            supportsReasoning: catalog.reasoning ?? false
+            supportsTools: catalog?.tools ?? true,
+            supportsReasoning: catalog?.reasoning ?? false
           };
         })
         .filter(m => isChatCandidate(m.id, m));
+      // `opencode models` can repeat a line; sweep each reference once.
+      const seen = new Set();
+      return models.filter(m => {
+        if (seen.has(m.fullId)) return false;
+        seen.add(m.fullId);
+        return true;
+      });
     } catch (err) {
       console.error(`${c.red}Failed to run 'opencode models': ${err.message}${c.reset}`);
       return [];
@@ -422,9 +469,50 @@ class ModelChecker {
     return sorted[0];
   }
 
+  // The exact reference opencode resolves, e.g. opencode-go/deepseek-v4-pro.
+  // For CLI-discovered models this is the line as printed by `opencode
+  // models`; for HTTP-discovered ones the sweep provider prefixes the id.
+  modelRef(provider, model) {
+    return model.fullId || `${model.provider || provider.name}/${model.id}`;
+  }
+
+  // Probe a model through the CLI harness, the honest test path for
+  // providers without a directly callable baseURL (built-ins like
+  // opencode-go). Never auto-passes: no events is a failure.
+  probeCli(provider, model, { expectTool = false, timeout = 90000 } = {}) {
+    const ref = this.modelRef(provider, model);
+    const prompt = expectTool
+      ? 'Call the bash tool to run the command: echo pong'
+      : 'Reply with exactly: pong';
+    const start = Date.now();
+    let stdout = '';
+    let runErr = null;
+    try {
+      stdout = execSync(`opencode run -m '${ref}' --format json '${prompt}'`, {
+        timeout,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        maxBuffer: 16 * 1024 * 1024
+      });
+    } catch (err) {
+      stdout = `${err.stdout || ''}\n${err.stderr || ''}`;
+      runErr = err;
+    }
+    const result = parseCliProbe(stdout, expectTool);
+    if (!result.pass && runErr) {
+      if (runErr.killed) {
+        result.error = `Timed out after ${Math.round(timeout / 1000)}s`;
+      } else if (result.error === 'No JSON events from opencode run') {
+        result.error = String(runErr.message).split('\n')[0];
+      }
+    }
+    result.latency = Date.now() - start;
+    return result;
+  }
+
   async testLevel1(model, provider) {
     if (!provider.baseURL) {
-      return { pass: true, latency: 0 };
+      return this.probeCli(provider, model, { expectTool: false, timeout: 90000 });
     }
     const url = new URL(provider.baseURL.replace(/\/+$/, '') + '/chat/completions');
     const start = Date.now();
@@ -461,7 +549,7 @@ class ModelChecker {
 
   async testLevel2(model, provider) {
     if (!provider.baseURL) {
-      return { pass: true, latency: 0 };
+      return this.probeCli(provider, model, { expectTool: true, timeout: 120000 });
     }
     const url = new URL(provider.baseURL.replace(/\/+$/, '') + '/chat/completions');
     const start = Date.now();
@@ -515,18 +603,7 @@ class ModelChecker {
   }
 
   async testLevel3(model, provider) {
-    const start = Date.now();
-    try {
-      const targetModel = model.provider ? `${model.provider}/${model.id}` : model.id;
-      execSync(`opencode run -m "${targetModel}" --format json "Reply with pong"`, {
-        timeout: 30000,
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'ignore']
-      });
-      return { pass: true, latency: Date.now() - start };
-    } catch (err) {
-      return { pass: false, error: err.message, latency: Date.now() - start };
-    }
+    return this.probeCli(provider, model, { expectTool: false, timeout: 90000 });
   }
 
   async run(pattern = null) {
@@ -577,7 +654,7 @@ class ModelChecker {
         if (!this.options.force && !pattern && cachedClass && cachedClass.status === 'failed') {
           console.log(`[${classIndex}/${classes.size}] Class ${c.yellow}${className}${c.reset}: ${c.gray}SKIPPED (Canary previously failed: ${cachedClass.error})${c.reset}`);
           for (const m of modelsInClass) {
-            const mKey = `${provider.name}/${m.id}`;
+            const mKey = this.modelRef(provider, m);
             if (!this.cache.models[mKey]) {
               this.cache.models[mKey] = {
                 status: 'skipped_class_failed',
@@ -604,7 +681,7 @@ class ModelChecker {
             lastTested: new Date().toISOString()
           };
           for (const m of modelsInClass) {
-            this.cache.models[`${provider.name}/${m.id}`] = {
+            this.cache.models[this.modelRef(provider, m)] = {
               status: 'skipped_class_failed',
               class: className,
               error: `Class canary failed: ${l1.error}`,
@@ -633,10 +710,11 @@ class ModelChecker {
           lastTested: new Date().toISOString()
         };
 
-        this.cache.models[`${provider.name}/${canary.id}`] = {
+        this.cache.models[this.modelRef(provider, canary)] = {
           status: 'ok',
           level: canaryLevelPassed,
           class: className,
+          testedVia: provider.baseURL ? 'http' : 'cli',
           pricing: canary.pricing,
           limits: { context: canary.contextLength, output: canary.maxOutput },
           supportsReasoning: canary.supportsReasoning,
@@ -651,7 +729,7 @@ class ModelChecker {
         // Test other models in this class
         const remaining = modelsInClass.filter(m => m.id !== canary.id);
         for (const m of remaining) {
-          const mKey = `${provider.name}/${m.id}`;
+          const mKey = this.modelRef(provider, m);
           if (!this.options.force && this.cache.models[mKey] && this.cache.models[mKey].status === 'ok') {
             continue;
           }
@@ -684,6 +762,7 @@ class ModelChecker {
             status: 'ok',
             level: mLevelPassed,
             class: className,
+            testedVia: provider.baseURL ? 'http' : 'cli',
             pricing: m.pricing,
             limits: { context: m.contextLength, output: m.maxOutput },
             supportsReasoning: m.supportsReasoning,
@@ -950,6 +1029,24 @@ class ModelChecker {
 
     const regexPattern = `^(${bareIds.map(id => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`;
 
+    let parsed;
+    try {
+      parsed = JSON.parse(stripJsonComments(rawContent));
+    } catch (err) {
+      console.error(`${c.red}Failed to parse ${filePath}: ${err.message}${c.reset}`);
+      return;
+    }
+
+    // modelsDiscovery only exists on custom provider blocks. Built-in
+    // providers (opencode-go via enabled_providers) have no such hook, and
+    // inventing one (e.g. 'bifrost') would corrupt the config.
+    const providerNames = Object.keys(parsed.provider || parsed.providers || {});
+    if (providerNames.length === 0) {
+      console.error(`${c.red}No custom provider block in ${filePath}.${c.reset}`);
+      console.error(`Discovery filtering applies to configured providers only (e.g. Bifrost). Built-in models (enabled_providers, like opencode-go) cannot be filtered here; nothing written.`);
+      return;
+    }
+
     console.log(`\nProposed update to ${c.cyan}${filePath}${c.reset}:`);
     console.log(`Set ${c.green}modelsDiscovery.models.includeBy${c.reset} to match the ${bareIds.length} working models.\n`);
 
@@ -963,8 +1060,7 @@ class ModelChecker {
     console.log(`Backed up existing config to ${c.dim}${backupPath}${c.reset}`);
 
     try {
-      const parsed = JSON.parse(stripJsonComments(rawContent));
-      const providerKey = Object.keys(parsed.provider || parsed.providers || {})[0] || 'bifrost';
+      const providerKey = providerNames[0];
 
       if (!parsed.provider) parsed.provider = {};
       if (!parsed.provider[providerKey]) parsed.provider[providerKey] = {};
@@ -989,7 +1085,8 @@ class ModelChecker {
     for (const [key, data] of entries) {
       const statusColor = data.status === 'ok' ? c.green : (data.status === 'failed' ? c.red : c.gray);
       const levelStr = data.level ? `[L${data.level}]` : '';
-      console.log(`- ${key.padEnd(50)} ${statusColor}${data.status.padEnd(14)}${c.reset} ${levelStr} ${data.error ? c.dim + data.error + c.reset : ''}`);
+      const viaStr = data.testedVia ? `[${data.testedVia}]` : '[untested]';
+      console.log(`- ${key.padEnd(50)} ${statusColor}${data.status.padEnd(14)}${c.reset} ${levelStr}${viaStr} ${data.error ? c.dim + data.error + c.reset : ''}`);
     }
   }
 
