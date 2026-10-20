@@ -51,8 +51,15 @@ check-models --force
 To produce a markdown report ranking verified models across 3 core archetypes
 (Subagent, Daily Driver, Heavy Reasoning) based on gateway token pricing and context limits:
 ```bash
+# Auto-detects budget based on active provider (Bifrost = generous, OpenCode Go = frugal)
 check-models report
+
+# Explicit budget profile:
+check-models report --budget generous   # $250/day allowance (velocity & quality prioritized)
+check-models report --budget frugal      # $10/mo allowance (token mileage prioritized)
 ```
+Generates reports at `~/.cache/opencode/model-report.md` and `~/.cache/opencode/recommended-model.json`.
+The top daily driver model is automatically displayed in the OpenCode TUI footer and on startup.
 
 #### 3. Configure OpenCode Discovery Whitelist
 To configure OpenCode (`~/.config/opencode/opencode.jsonc`) so that dynamic discovery

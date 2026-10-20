@@ -38,8 +38,17 @@ context limits against verified capabilities.
    cached models; `--force` rechecks all.
 5. Provide `check-models report` to generate a markdown shortlist of the top
    3–5 models giving the highest bang for the buck across three archetypes:
-   Subagent, Daily Driver, and Heavy Reasoning.
-6. Provide `check-models configure` to update machine-owned
+   Subagent, Daily Driver, and Heavy Reasoning. Factor in host budget profiles:
+   - `generous` ($250/day allowance; auto-detected on Bifrost): quality/velocity dominates.
+   - `frugal` ($10/month allowance; auto-detected on OpenCode Go / personal): token mileage dominates.
+   Persist human-readable reports to `~/.cache/opencode/model-report.md` and
+   machine-readable summaries to `~/.cache/opencode/recommended-model.json`.
+6. Deliver a tracked OpenCode plugin at
+   `dotfiles/opencode-plugins/.config/opencode/plugins/model-recommendation.js`
+   (stowed into `~/.config/opencode/plugins/` per [ADR-0036](0036-stow-the-herdr-worktree-open-plugin.md))
+   that reads the recommended model on start, displaying a startup toast banner
+   and appending the recommended model to the TUI footer status slot.
+7. Provide `check-models configure` to update machine-owned
    `~/.config/opencode/opencode.jsonc` (backing it up first per Convention 3) so
    OpenCode's dynamic discovery only exposes verified working models.
 

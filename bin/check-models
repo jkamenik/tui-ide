@@ -699,7 +699,21 @@ class ModelChecker {
     console.log(`Run ${c.cyan}check-models report${c.reset} to view top recommendations.`);
   }
 
-  generateReport() {
+  generateReport(budgetProfileName = null) {
+    // Determine budget profile: explicit flag -> auto-detect
+    let isGenerous = true;
+    if (budgetProfileName) {
+      isGenerous = budgetProfileName.toLowerCase().startsWith('gen');
+    } else {
+      // Auto-detect: if active providers have Bifrost -> generous; else frugal
+      const hasBifrost = Object.values(this.providers).some(p => p.isBifrost);
+      isGenerous = hasBifrost;
+    }
+
+    const budgetLabel = isGenerous ? 'Generous ($250 / day allowance)' : 'Frugal ($10 / month allowance)';
+    const budgetAllowance = isGenerous ? 250 : 10;
+    const budgetPeriod = isGenerous ? 'day' : 'month';
+
     const workingModels = Object.entries(this.cache.models)
       .filter(([_, data]) => data.status === 'ok' && data.level >= 2)
       .map(([key, data]) => {
@@ -726,43 +740,61 @@ class ModelChecker {
       return;
     }
 
-    // Archetype 1: Daily Driver / Workhorse (Sweet spot of intelligence, tool use, 1M context, balanced cost)
-    // Excludes lite/nano/micro/haiku/preview
+    // Archetype 1: Daily Driver / Workhorse
+    // In generous mode: Focus on high capability (Bang >= 80, Gemini 3.8 Flash / Sonnet)
+    // In frugal mode: Focus on high mileage within budget (Cost <= $0.75/M, Haiku / MiMo / Flash-Lite / Qwen)
     const workhorseCandidates = workingModels.filter(m => {
       const id = m.id.toLowerCase();
-      const isLite = id.includes('lite') || id.includes('nano') || id.includes('micro') || id.includes('haiku') || id.includes('preview');
-      return m.bang >= 75 && !isLite;
+      const isLite = id.includes('lite') || id.includes('nano') || id.includes('micro') || id.includes('preview');
+      if (isGenerous) {
+        return m.bang >= 75 && !isLite && !id.includes('haiku');
+      } else {
+        // Frugal mode allows efficient models to serve as daily drivers
+        return m.bang >= 65 && m.blendedCost <= 1.00;
+      }
     }).sort((a, b) => {
-      const aScore = Math.pow(a.bang, 1.3) / Math.max(0.7, a.blendedCost);
-      const bScore = Math.pow(b.bang, 1.3) / Math.max(0.7, b.blendedCost);
+      let aScore, bScore;
+      if (isGenerous) {
+        aScore = Math.pow(a.bang, 1.4) / Math.max(0.7, Math.pow(a.blendedCost, 0.35));
+        bScore = Math.pow(b.bang, 1.4) / Math.max(0.7, Math.pow(b.blendedCost, 0.35));
+      } else {
+        aScore = a.bang / Math.pow(Math.max(0.08, a.blendedCost), 1.3);
+        bScore = b.bang / Math.pow(Math.max(0.08, b.blendedCost), 1.3);
+      }
       return bScore - aScore;
     });
 
     const bestWorkhorse = workhorseCandidates[0];
 
-    // Archetype 2: Heavy Reasoning & Architecture (Peak cognitive capability)
+    // Archetype 2: Heavy Reasoning & Architecture
     const reasoningCandidates = workingModels.filter(m => {
       const id = m.id.toLowerCase();
       return id.includes('opus') || id.includes('o3') || id.includes('r1') || id.includes('pro');
     }).sort((a, b) => {
-      const aScore = Math.pow(a.bang, 2.5) / (a.blendedCost + 5.0);
-      const bScore = Math.pow(b.bang, 2.5) / (b.blendedCost + 5.0);
+      let aScore, bScore;
+      if (isGenerous) {
+        aScore = Math.pow(a.bang, 2.5) / (a.blendedCost + 5.0);
+        bScore = Math.pow(b.bang, 2.5) / (b.blendedCost + 5.0);
+      } else {
+        aScore = Math.pow(a.bang, 1.6) / (a.blendedCost + 2.0);
+        bScore = Math.pow(b.bang, 1.6) / (b.blendedCost + 2.0);
+      }
       return bScore - aScore;
     });
 
     const bestReasoning = reasoningCandidates[0];
 
-    // Archetype 3: Fast / Cheap Subagent (Maximum throughput & rock-bottom cost)
-    const subagents = workingModels.filter(m => m.blendedCost <= 1.50)
+    // Archetype 3: Fast / Cheap Subagent (Maximum throughput)
+    const subagents = workingModels.filter(m => m.blendedCost <= (isGenerous ? 1.50 : 0.50))
       .sort((a, b) => {
-        const aScore = a.bang / Math.pow(a.blendedCost, 0.7);
-        const bScore = b.bang / Math.pow(b.blendedCost, 0.7);
+        const aScore = a.bang / Math.pow(Math.max(0.05, a.blendedCost), isGenerous ? 0.7 : 1.4);
+        const bScore = b.bang / Math.pow(Math.max(0.05, b.blendedCost), isGenerous ? 0.7 : 1.4);
         return bScore - aScore;
       });
 
-    const bestSubagent = subagents[0];
+    const bestSubagent = subagents[0] || workingModels.sort((a, b) => a.blendedCost - b.blendedCost)[0];
 
-    // Assemble top 3-5 recommendations avoiding duplicates from the exact same line
+    // Assemble recommendations avoiding duplicate model lines
     const recommendations = [];
     const seenKeys = new Set();
     const seenFamilies = new Set();
@@ -786,16 +818,20 @@ class ModelChecker {
     };
 
     if (bestWorkhorse) {
-      addRec(bestWorkhorse, '🛠️ Daily Driver / Workhorse', 'Ideal balance of high intelligence, 1M context, reliable tool calling, and economical pricing.');
+      addRec(bestWorkhorse, '🛠️ Daily Driver / Workhorse', isGenerous
+        ? 'Ideal balance of high intelligence, 1M context, reliable tool calling, and economical pricing.'
+        : 'High-mileage daily driver maximizing tokens on your monthly budget with dependable tool use.');
     }
     if (bestReasoning) {
-      addRec(bestReasoning, '🧠 Heavy Reasoning & Architecture', 'Top cognitive capability for complex multi-file refactoring, debugging, and systems design.');
+      addRec(bestReasoning, '🧠 Heavy Reasoning & Architecture', isGenerous
+        ? 'Top cognitive capability for complex multi-file refactoring, debugging, and systems design.'
+        : 'High-intelligence reasoning reserve (use selectively on complex tasks to preserve quota).');
     }
-    if (bestSubagent) {
+    if (bestSubagent && bestSubagent.key !== bestWorkhorse?.key) {
       addRec(bestSubagent, '🚀 Fast & Cheap Subagent', 'Minimal cost and high throughput for searches, exploration, and small utility tasks.');
     }
 
-    // Add high-tier alternatives (e.g. flagship Sonnet if Gemini is workhorse, or budget subagent)
+    // Add alternatives
     for (const m of workhorseCandidates) {
       if (recommendations.length >= 5) break;
       const fam = getFamily(m.id);
@@ -814,18 +850,30 @@ class ModelChecker {
 
     const date = new Date().toISOString().split('T')[0];
     let md = `# OpenCode Model Recommendations (${date})\n\n`;
+    md += `**Active Budget Profile:** \`${budgetLabel}\`\n\n`;
     md += `Based on live capability testing, quality weighting (Bang), and exact gateway pricing (Buck), here is the shortlist of **top ${recommendations.length} models** giving the highest bang for the buck.\n\n`;
 
     md += `## Recommended Shortlist\n\n`;
-    md += `| Role | Model | Quality Score | Context | Cost (Prompt / Output) | Blended / 1M |\n`;
-    md += `| :--- | :--- | :---: | :---: | :--- | :---: |\n`;
+    md += `| Role | Model | Quality | Context | Cost (Prompt / Output) | Blended / 1M | Est. Tokens / ${budgetPeriod} |\n`;
+    md += `| :--- | :--- | :---: | :---: | :--- | :---: | :---: |\n`;
 
     for (const r of recommendations) {
       const promptStr = formatCost(r.pricing?.promptPerMillion);
       const compStr = formatCost(r.pricing?.completionPerMillion);
       const blendedStr = formatCost(r.pricing?.blendedPerMillion);
       const ctxStr = r.limits.context ? `${Math.round(r.limits.context / 1000)}k` : 'unknown';
-      md += `| **${r.archetype}** | \`${r.key}\` | **${r.bang}/100** | ${ctxStr} | ${promptStr} / ${compStr} | **${blendedStr}** |\n`;
+
+      let tokensAllowedStr = 'n/a';
+      if (r.blendedCost > 0) {
+        const tokensAllowed = Math.round((budgetAllowance / r.blendedCost) * 1000000);
+        tokensAllowedStr = tokensAllowed >= 1000000
+          ? `~${(tokensAllowed / 1000000).toFixed(1)}M`
+          : `~${Math.round(tokensAllowed / 1000)}k`;
+      } else {
+        tokensAllowedStr = 'Unlimited';
+      }
+
+      md += `| **${r.archetype}** | \`${r.key}\` | **${r.bang}/100** | ${ctxStr} | ${promptStr} / ${compStr} | **${blendedStr}** | ${tokensAllowedStr} |\n`;
     }
 
     md += `\n### Detailed Analysis\n\n`;
@@ -836,6 +884,11 @@ class ModelChecker {
       md += `- **Context Window:** ${r.limits.context ? r.limits.context.toLocaleString() + ' tokens' : 'Standard'}\n`;
       if (r.pricing) {
         md += `- **Pricing:** ${formatCost(r.pricing.promptPerMillion)} / 1M prompt tokens, ${formatCost(r.pricing.completionPerMillion)} / 1M output tokens\n`;
+        const tokensAllowed = (budgetAllowance / r.blendedCost) * 1000000;
+        md += `- **Budget Mileage:** Allows ~${(tokensAllowed / 1000000).toFixed(1)}M tokens per ${budgetPeriod} on your ${isGenerous ? '$250/day' : '$10/mo'} budget\n`;
+        if (!isGenerous && r.blendedCost >= 3.00) {
+          md += `- **⚠️ Budget Advisory:** At $${r.blendedCost.toFixed(2)}/M, this model exhausts your entire $10 monthly budget in ${(tokensAllowed / 1000000).toFixed(1)}M tokens (~1–2 deep sessions). Use strategically for high-difficulty tasks.\n`;
+        }
       }
       md += `- **OpenCode Usage:**\n`;
       md += `  \`\`\`json\n  {\n    "model": "${r.key}"\n  }\n  \`\`\`\n\n`;
@@ -852,6 +905,9 @@ class ModelChecker {
       fs.writeFileSync(REPORT_FILE, md, 'utf8');
       const recJson = {
         updated: date,
+        budgetProfile: isGenerous ? 'generous' : 'frugal',
+        budgetAllowance,
+        budgetPeriod,
         recommendations: recommendations.map(r => ({
           archetype: r.archetype,
           model: r.key,
@@ -965,6 +1021,7 @@ ${c.bold}OPTIONS${c.reset}
   --force, -f           Ignore cache and recheck models.
   --canary-only         Only test the cheapest canary model in each class.
   --level <1|2|3>       Max test level (1=chat, 2=tools, 3=harness, default: 2).
+  --budget <gen|frugal> Budget profile (generous=$250/day, frugal=$10/mo, default: auto).
   --provider <name>     Test specific provider (e.g. bifrost, opencode-go).
   --dry-run             Show changes without writing (for configure).
   --help, -h            Show this help.
@@ -987,6 +1044,7 @@ async function main() {
     force: false,
     canaryOnly: false,
     level: 2,
+    budget: null,
     provider: null,
     dryRun: false
   };
@@ -1002,6 +1060,8 @@ async function main() {
       options.canaryOnly = true;
     } else if (arg === '--dry-run') {
       options.dryRun = true;
+    } else if (arg === '--budget' && args[i + 1]) {
+      options.budget = args[++i];
     } else if (arg === '--level' && args[i + 1]) {
       options.level = parseInt(args[++i], 10);
     } else if (arg === '--provider' && args[i + 1]) {
@@ -1020,7 +1080,7 @@ async function main() {
   } else if (command === 'list') {
     checker.listCached();
   } else if (command === 'report') {
-    checker.generateReport();
+    checker.generateReport(options.budget);
   } else if (command === 'configure') {
     checker.configureOpenCode(options.dryRun);
   } else {
