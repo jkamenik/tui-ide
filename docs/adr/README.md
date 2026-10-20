@@ -46,6 +46,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0035](0035-machine-owned-config-includes-tracked-config.md) | Device-local config files are machine-owned and include a tracked config | Accepted | 2026-10-15 |
 | [0036](0036-stow-the-herdr-worktree-open-plugin.md) | Stow the herdr worktree-open opencode plugin | Accepted | 2026-10-15 |
 | [0037](0037-check-models-tool-and-skill.md) | Model capability testing via `check-models` and an OpenCode skill | Accepted | 2026-10-20 |
+| [0038](0038-remove-merged-worktrees-in-git-cleanup.md) | Remove merged Git worktrees and Herdr workspaces in `git-cleanup` | Accepted | 2026-10-20 |
 
 
 ## Format

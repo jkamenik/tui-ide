@@ -5,6 +5,11 @@
 # Bring a checkout back in sync with the remote and delete local branches whose
 # upstream is gone (merged, or squash-merged, on the remote).
 #
+# Also checks for linked Git worktrees. Clean worktrees whose branch is merged
+# into the target or whose upstream is gone are removed. If a worktree is open
+# as a workspace in Herdr, it is removed via `herdr worktree remove` so the
+# workspace disappears from Herdr's sidebar.
+#
 # With no argument the branch defaults to the remote's default branch as
 # reported by origin/HEAD, falling back to main, then master. The branch is
 # checked out and fast-forwarded from the remote before stale branches are
@@ -25,6 +30,12 @@ die() { echo "git-cleanup: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "not a git repository"
+
+# Refuse to run from inside a linked worktree: cleanup switches branches and
+# prunes worktrees, which must run from the primary checkout.
+if [ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ]; then
+  die "cannot run cleanup from inside a linked worktree; run from the primary checkout"
+fi
 
 # Resolve the target branch: explicit argument, else origin/HEAD, else a local
 # main/master.
@@ -61,20 +72,154 @@ else
   echo "    $target has no upstream; skipping pull"
 fi
 
-# List local branches whose upstream is gone. for-each-ref is precise where
-# grepping `git branch -v` output is not: `%(upstream:track)` prints exactly
-# `[gone]`, and no branch name or subject can be mistaken for it.
-info "Checking for local branches with a gone upstream"
+# Check linked worktrees. If a worktree is on a branch that is merged into the
+# target, or whose upstream is gone, and the worktree is clean, remove it.
+# If open in Herdr, close its workspace through the Herdr CLI so it disappears
+# from the sidebar.
+info "Checking for linked worktrees"
+repo_root="$(git rev-parse --show-toplevel)"
+
+find_herdr_workspace() {
+  local path="$1"
+  if command -v herdr >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    herdr worktree list --cwd "$repo_root" 2>/dev/null \
+      | jq -r --arg p "$path" '.result.worktrees[]? | select(.path == $p and .open_workspace_id != null) | .open_workspace_id' 2>/dev/null || true
+  fi
+}
+
+declare -a wt_paths=()
+declare -a wt_heads=()
+declare -a wt_branches=()
+declare -a wt_prunables=()
+
+current_path="" current_head="" current_branch="" current_prunable=0 is_first=1
+while IFS= read -r line || [ -n "$line" ]; do
+  if [[ "$line" =~ ^worktree\ (.*)$ ]]; then
+    if [ -n "$current_path" ]; then
+      if [ "$is_first" -eq 1 ]; then
+        is_first=0
+      else
+        wt_paths+=("$current_path")
+        wt_heads+=("$current_head")
+        wt_branches+=("$current_branch")
+        wt_prunables+=("$current_prunable")
+      fi
+    fi
+    current_path="${BASH_REMATCH[1]}"
+    current_head=""
+    current_branch=""
+    current_prunable=0
+  elif [[ "$line" =~ ^HEAD\ (.*)$ ]]; then
+    current_head="${BASH_REMATCH[1]}"
+  elif [[ "$line" =~ ^branch\ refs/heads/(.*)$ ]]; then
+    current_branch="${BASH_REMATCH[1]}"
+  elif [[ "$line" =~ ^prunable ]]; then
+    current_prunable=1
+  fi
+done < <(git worktree list --porcelain)
+
+if [ -n "$current_path" ] && [ "$is_first" -eq 0 ]; then
+  wt_paths+=("$current_path")
+  wt_heads+=("$current_head")
+  wt_branches+=("$current_branch")
+  wt_prunables+=("$current_prunable")
+fi
+
+worktrees_removed=0
+for i in "${!wt_paths[@]}"; do
+  wt_path="${wt_paths[i]}"
+  wt_head="${wt_heads[i]}"
+  wt_branch="${wt_branches[i]}"
+  wt_prunable="${wt_prunables[i]}"
+
+  # Worktree directory already missing on disk
+  if [ "$wt_prunable" -eq 1 ] || [ ! -d "$wt_path" ]; then
+    ws_id="$(find_herdr_workspace "$wt_path")"
+    if [ -n "$ws_id" ]; then
+      herdr workspace close "$ws_id" >/dev/null 2>&1 || true
+    fi
+    git worktree prune >/dev/null 2>&1 || true
+    continue
+  fi
+
+  # Skip worktrees with uncommitted changes to prevent data loss
+  if ! git -C "$wt_path" diff --quiet 2>/dev/null || \
+     ! git -C "$wt_path" diff --cached --quiet 2>/dev/null || \
+     [ -n "$(git -C "$wt_path" status --porcelain 2>/dev/null)" ]; then
+    echo "    skipping $wt_path${wt_branch:+ ($wt_branch)}: worktree has uncommitted changes"
+    continue
+  fi
+
+  # Check if branch or commit is merged or gone upstream
+  is_done=0
+  if [ -n "$wt_branch" ]; then
+    if git merge-base --is-ancestor "$wt_branch" "$target" 2>/dev/null; then
+      is_done=1
+    else
+      track="$(git for-each-ref --format='%(upstream:track)' "refs/heads/$wt_branch" 2>/dev/null || true)"
+      if [ "$track" = "[gone]" ]; then
+        is_done=1
+      fi
+    fi
+  elif [ -n "$wt_head" ]; then
+    if git merge-base --is-ancestor "$wt_head" "$target" 2>/dev/null; then
+      is_done=1
+    fi
+  fi
+
+  if [ "$is_done" -eq 1 ]; then
+    echo "    removing worktree $wt_path${wt_branch:+ ($wt_branch)}"
+    ws_id="$(find_herdr_workspace "$wt_path")"
+    removed_by_herdr=0
+    if [ -n "$ws_id" ]; then
+      if herdr worktree remove --workspace "$ws_id" >/dev/null 2>&1; then
+        removed_by_herdr=1
+      fi
+    fi
+    if [ "$removed_by_herdr" -eq 0 ]; then
+      git worktree remove "$wt_path"
+    fi
+    worktrees_removed=1
+
+    if [ -n "$wt_branch" ] && git show-ref --verify --quiet "refs/heads/$wt_branch"; then
+      echo "    deleting $wt_branch"
+      git branch -D "$wt_branch"
+    fi
+  fi
+done
+
+if [ "$worktrees_removed" -eq 0 ] && [ "${#wt_paths[@]}" -gt 0 ]; then
+  echo "    none eligible"
+elif [ "${#wt_paths[@]}" -eq 0 ]; then
+  echo "    none"
+fi
+
+# List local branches whose upstream is gone or that are merged into target.
+# for-each-ref is precise where grepping `git branch -v` output is not:
+# `%(upstream:track)` prints exactly `[gone]`.
+info "Checking for local branches with a gone upstream or merged into $target"
+active_wt_branches="$(git worktree list --porcelain | awk '$1 == "branch" { sub("^refs/heads/", "", $2); print $2 }')"
+
 gone="$(git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
   | awk -v current="$target" '$2 == "[gone]" && $1 != current { print $1 }')"
-if [ -n "$gone" ]; then
+
+merged="$(git branch --merged "$target" --format='%(refname:short)' \
+  | awk -v current="$target" '$1 != current { print $1 }')"
+
+candidates="$(printf "%s\n%s\n" "$gone" "$merged" | sort -u | grep -v '^$' || true)"
+
+if [ -n "$candidates" ]; then
   # -D, not -d: a squash merge leaves the branch "unmerged" from git's point of
   # view, so -d would refuse to delete it.
   while IFS= read -r branch; do
     [ -n "$branch" ] || continue
+    if echo "$active_wt_branches" | grep -qxF "$branch"; then
+      echo "    skipping $branch: currently checked out in an active worktree"
+      continue
+    fi
     echo "    deleting $branch"
     git branch -D "$branch"
-  done <<<"$gone"
+  done <<<"$candidates"
 else
   echo "    none"
 fi
