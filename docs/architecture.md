@@ -67,7 +67,7 @@ flowchart TB
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
 | obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled. Optional: loaded only when the local overlay names a workspace that exists on disk |
 | mini.map | Minimap | Floating buffer overview on the right, `<leader>vm`; search and diagnostic highlights |
-| `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md)) |
+| `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, `check-models`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0037](adr/0037-check-models-tool-and-skill.md)) |
 
 ## Cross-Machine Model
 
@@ -215,3 +215,4 @@ record that replaced them.
 | [0034](adr/0034-machine-owned-zshrc-sources-tracked-config.md) | Let the machine own `~/.zshrc` and source a tracked shell config | Accepted |
 | [0035](adr/0035-machine-owned-config-includes-tracked-config.md) | Device-local config files are machine-owned and include a tracked config | Accepted |
 | [0036](adr/0036-stow-the-herdr-worktree-open-plugin.md) | Stow the herdr worktree-open opencode plugin | Accepted |
+| [0037](adr/0037-check-models-tool-and-skill.md) | Model capability testing via `check-models` and an OpenCode skill | Accepted |

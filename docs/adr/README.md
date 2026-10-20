@@ -45,6 +45,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0034](0034-machine-owned-zshrc-sources-tracked-config.md) | Let the machine own `~/.zshrc` and source a tracked shell config | Accepted | 2026-10-15 |
 | [0035](0035-machine-owned-config-includes-tracked-config.md) | Device-local config files are machine-owned and include a tracked config | Accepted | 2026-10-15 |
 | [0036](0036-stow-the-herdr-worktree-open-plugin.md) | Stow the herdr worktree-open opencode plugin | Accepted | 2026-10-15 |
+| [0037](0037-check-models-tool-and-skill.md) | Model capability testing via `check-models` and an OpenCode skill | Accepted | 2026-10-20 |
 
 
 ## Format

@@ -1,0 +1,1034 @@
+#!/usr/bin/env node
+/**
+ * check-models - Test and verify working models across OpenCode providers.
+ *
+ * Checks which models actually work on this machine by testing:
+ *   - Level 1: Chat ping
+ *   - Level 2: Tool calling (function calling)
+ *   - Level 3: Full OpenCode CLI harness
+ *
+ * Models are grouped into classes (by vendor/namespace and family).
+ * The cheapest "canary" model of each class is tested first; if it fails,
+ * the entire class is marked failed and skipped to avoid wasting tokens,
+ * hitting rate limits, or waiting on dead routes.
+ *
+ * Results are cached incrementally in ~/.cache/opencode/model-test-cache.json.
+ *
+ * Subcommands:
+ *   check-models [pattern]   - Run test sweep (incremental by default)
+ *   check-models report      - Output markdown shortlist of top 3-5 bang-for-buck models
+ *   check-models configure   - Update opencode.jsonc to only discover working models
+ *   check-models list        - List all cached models and statuses
+ *   check-models clean       - Wipe test cache
+ */
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { execSync } = require('child_process');
+
+const CACHE_DIR = path.join(os.homedir(), '.cache', 'opencode');
+const CACHE_FILE = path.join(CACHE_DIR, 'model-test-cache.json');
+const REPORT_FILE = path.join(CACHE_DIR, 'model-report.md');
+const RECOMMENDED_FILE = path.join(CACHE_DIR, 'recommended-model.json');
+const OPENCODE_CONFIG_FILE = path.join(os.homedir(), '.config', 'opencode', 'opencode.jsonc');
+const OPENCODE_CONFIG_FILE_JSON = path.join(os.homedir(), '.config', 'opencode', 'opencode.json');
+
+// Terminal colors
+const c = {
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  gray: '\x1b[90m'
+};
+
+function stripJsonComments(text) {
+  let inString = false;
+  let stringChar = '';
+  let inSingleComment = false;
+  let inMultiComment = false;
+  let result = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (inSingleComment) {
+      if (ch === '\n') {
+        inSingleComment = false;
+        result += ch;
+      }
+      continue;
+    }
+
+    if (inMultiComment) {
+      if (ch === '*' && next === '/') {
+        inMultiComment = false;
+        i++;
+      }
+      continue;
+    }
+
+    if (inString) {
+      result += ch;
+      if (ch === '\\') {
+        result += next;
+        i++;
+      } else if (ch === stringChar) {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      inString = true;
+      stringChar = ch;
+      result += ch;
+      continue;
+    }
+
+    if (ch === '/' && next === '/') {
+      inSingleComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === '/' && next === '*') {
+      inMultiComment = true;
+      i++;
+      continue;
+    }
+
+    result += ch;
+  }
+
+  return result.replace(/,\s*([}\]])/g, '$1');
+}
+
+function loadOpenCodeConfig() {
+  const file = fs.existsSync(OPENCODE_CONFIG_FILE)
+    ? OPENCODE_CONFIG_FILE
+    : (fs.existsSync(OPENCODE_CONFIG_FILE_JSON) ? OPENCODE_CONFIG_FILE_JSON : null);
+
+  if (!file) return { config: null, filePath: null, rawContent: '' };
+  try {
+    const content = fs.readFileSync(file, 'utf8');
+    const cleaned = stripJsonComments(content);
+    return { config: JSON.parse(cleaned), filePath: file, rawContent: content };
+  } catch (err) {
+    console.warn(`${c.yellow}Warning: Could not parse ${file}: ${err.message}${c.reset}`);
+    return { config: null, filePath: file, rawContent: '' };
+  }
+}
+
+// Known pricing / limits catalog fallback for common models (e.g. OpenCode Go)
+const KNOWN_MODELS_CATALOG = {
+  'mimo-v2.5': { name: 'MiMo V2.5', prompt: 0.14, completion: 0.28, context: 1000000, output: 128000, tools: true, reasoning: true },
+  'mimo-v2.5-pro': { name: 'MiMo V2.5 Pro', prompt: 0.43, completion: 0.87, context: 1048576, output: 128000, tools: true, reasoning: true },
+  'mimo-v2.6-flash': { name: 'MiMo V2.6 Flash', prompt: 0.14, completion: 0.28, context: 1000000, output: 128000, tools: true, reasoning: true },
+  'mimo-v2.6-pro': { name: 'MiMo V2.6 Pro', prompt: 0.43, completion: 0.87, context: 1048576, output: 128000, tools: true, reasoning: true },
+  'minimax-m2.5': { name: 'MiniMax M2.5', prompt: 0.30, completion: 1.20, context: 204800, output: 65536, tools: true, reasoning: true },
+  'minimax-m2.7': { name: 'MiniMax M2.7', prompt: 0.30, completion: 1.20, context: 204800, output: 131072, tools: true, reasoning: true },
+  'minimax-m3': { name: 'MiniMax M3', prompt: 0.30, completion: 1.00, context: 1000000, output: 131072, tools: true, reasoning: true },
+  'qwen3.5-plus': { name: 'Qwen3.5 Plus', prompt: 0.20, completion: 1.20, context: 262144, output: 65536, tools: true, reasoning: true },
+  'qwen3.6-plus': { name: 'Qwen3.6 Plus', prompt: 0.50, completion: 3.00, context: 1000000, output: 65536, tools: true, reasoning: true },
+  'qwen3.7-max': { name: 'Qwen3.7 Max', prompt: 2.50, completion: 7.50, context: 1000000, output: 65536, tools: true, reasoning: true },
+  'kimi-k2.5': { name: 'Kimi K2.5', prompt: 0.60, completion: 3.00, context: 262144, output: 32768, tools: true, reasoning: true },
+  'kimi-k3': { name: 'Kimi K3', prompt: 2.82, completion: 14.13, context: 1048576, output: 1048576, tools: true, reasoning: true },
+  'ox-alpha-free': { name: 'Ox Alpha Free', prompt: 0.00, completion: 0.00, context: 1000000, output: 131072, tools: true, reasoning: true },
+  'step-5-preview-free': { name: 'Step 5 Preview Free', prompt: 0.00, completion: 0.00, context: 1000000, output: 131072, tools: true, reasoning: true }
+};
+
+function classifyModel(id) {
+  if (id.includes('/')) {
+    const parts = id.split('/');
+    if (parts[0] === 'openrouter' && parts.length > 2) {
+      return `openrouter/${parts[1]}`;
+    }
+    if (parts[0] === 'vertex' && parts.length > 1) {
+      const sub = parts[1].split('-')[0];
+      return `vertex/${sub}`;
+    }
+    if (parts[0] === 'openai' && parts.length > 1) {
+      const sub = parts[1].startsWith('ft:') ? 'ft' : parts[1].split('-')[0];
+      return `openai/${sub}`;
+    }
+    return parts[0];
+  }
+
+  // OpenCode Go or flat models: e.g. "mimo-v2.5-pro", "minimax-m2.7", "qwen3.6-plus"
+  const alphaMatch = id.match(/^[a-zA-Z]+/);
+  if (alphaMatch) {
+    return alphaMatch[0].toLowerCase();
+  }
+  return 'default';
+}
+
+function isChatCandidate(id, m) {
+  const lower = id.toLowerCase();
+  const nonChatWords = [
+    'embed', 'bge-', 'tts', 'whisper', 'transcribe',
+    'ocr', 'moderation', 'sora', 'dall-e', 'realtime-whisper',
+    'realtime-translate', 'live-translate', 'decider', 'jev'
+  ];
+  if (nonChatWords.some(w => lower.includes(w))) {
+    return false;
+  }
+  // If architecture specifically states non-text output
+  if (m?.raw?.architecture?.output_modalities) {
+    if (!m.raw.architecture.output_modalities.includes('text')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function normalizePricing(pricing) {
+  if (!pricing) return null;
+  const prompt = Number(pricing.prompt || 0);
+  const completion = Number(pricing.completion || 0);
+  // Bifrost returns per-token (e.g. 0.00000075) whereas OpenRouter / OpenCode Go catalogs return per million
+  const promptPerMillion = prompt < 0.01 && prompt > 0 ? prompt * 1000000 : prompt;
+  const completionPerMillion = completion < 0.01 && completion > 0 ? completion * 1000000 : completion;
+  return {
+    rawPrompt: prompt,
+    rawCompletion: completion,
+    promptPerMillion: Number(promptPerMillion.toFixed(4)),
+    completionPerMillion: Number(completionPerMillion.toFixed(4)),
+    blendedPerMillion: Number((0.75 * promptPerMillion + 0.25 * completionPerMillion).toFixed(4))
+  };
+}
+
+function formatCost(val) {
+  if (val == null || isNaN(val)) return 'n/a';
+  const num = Number(val);
+  const fixed = num.toFixed(4);
+  const trimmed = fixed.replace(/(\.\d{2,}?)0+$/, '$1');
+  const parts = trimmed.split('.');
+  if (parts.length === 1) return '$' + parts[0] + '.00';
+  if (parts[1].length < 2) return '$' + parts[0] + '.' + parts[1].padEnd(2, '0');
+  return '$' + trimmed;
+}
+
+function parseVersion(id) {
+  const match = id.match(/(\d+(?:\.\d+)*)/);
+  return match ? parseFloat(match[1]) : 1.0;
+}
+
+function calculateBang(m) {
+  const id = (m.id || '').toLowerCase();
+  let baseScore = 20;
+
+  const isFrontierReasoning = id.includes('opus') || id.includes('o3') || id.includes('r1') || (id.includes('pro') && !id.includes('preview'));
+  const isWorkhorse = id.includes('sonnet') || id.includes('gpt-5') || id.includes('gpt-4o') || (id.includes('flash') && !id.includes('lite'));
+
+  if (isFrontierReasoning) {
+    baseScore = 45;
+  } else if (isWorkhorse) {
+    baseScore = 38;
+  } else if (id.includes('flash-lite') || id.includes('haiku') || id.includes('mini')) {
+    baseScore = 25;
+  }
+
+  // Generational recency bonus
+  const ver = parseVersion(id);
+  let verBonus = 10;
+  if (ver >= 5.0) verBonus = 25;
+  else if (ver >= 4.5) verBonus = 22;
+  else if (ver >= 3.8) verBonus = 20;
+  else if (ver >= 3.5) verBonus = 17;
+  else if (ver >= 3.0) verBonus = 14;
+  else if (ver >= 2.5) verBonus = 8;
+
+  // Penalize preview / experimental / non-text-focused variants
+  let stabilityBonus = 5;
+  if (id.includes('preview') || id.includes('exp')) stabilityBonus = 0;
+  if (id.includes('banana') || id.includes('image')) stabilityBonus = 0;
+
+  // Context window bonus
+  let ctxBonus = 0;
+  if ((m.limits?.context || 0) >= 1000000) ctxBonus = 10;
+  else if ((m.limits?.context || 0) >= 200000) ctxBonus = 6;
+
+  // Tool execution & reasoning bonus
+  let toolBonus = 0;
+  if (m.level >= 2) toolBonus += 10;
+  if (m.supportsReasoning || id.includes('opus') || id.includes('o3') || id.includes('r1')) toolBonus += 5;
+
+  return Math.min(100, baseScore + verBonus + stabilityBonus + ctxBonus + toolBonus);
+}
+
+class ModelChecker {
+  constructor(options = {}) {
+    this.options = options;
+    this.cache = this.loadCache();
+    this.providers = this.detectProviders();
+  }
+
+  loadCache() {
+    if (!fs.existsSync(CACHE_FILE)) {
+      return { lastUpdated: null, classes: {}, models: {} };
+    }
+    try {
+      return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+    } catch {
+      return { lastUpdated: null, classes: {}, models: {} };
+    }
+  }
+
+  saveCache() {
+    try {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+      this.cache.lastUpdated = new Date().toISOString();
+      fs.writeFileSync(CACHE_FILE, JSON.stringify(this.cache, null, 2), 'utf8');
+    } catch (err) {
+      console.warn(`${c.yellow}Warning: Failed to save cache: ${err.message}${c.reset}`);
+    }
+  }
+
+  detectProviders() {
+    const { config } = loadOpenCodeConfig();
+    const providers = {};
+
+    const providerMap = (config && (config.provider || config.providers)) || {};
+    for (const [name, p] of Object.entries(providerMap)) {
+      const opts = p.options || p.settings || {};
+      const baseURL = opts.baseURL || p.baseURL;
+      const apiKey = opts.apiKey || p.apiKey || process.env.OPENCODE_API_KEY || process.env[`${name.toUpperCase().replace(/-/g, '_')}_API_KEY`];
+      providers[name] = {
+        name,
+        baseURL,
+        apiKey,
+        options: opts,
+        isBifrost: (baseURL && baseURL.includes('bifrost')) || opts.modelsDiscovery?.modelInfoFormat === 'bifrost',
+        isOpenCodeGo: name.toLowerCase().includes('opencode-go') || name.toLowerCase() === 'go'
+      };
+    }
+
+    // OpenCode Go stub / environment fallback
+    if (process.env.OPENCODE_GO_API_KEY || (process.env.OPENCODE_API_KEY && !providers['bifrost'])) {
+      if (!providers['opencode-go']) {
+        providers['opencode-go'] = {
+          name: 'opencode-go',
+          baseURL: process.env.OPENCODE_GO_BASE_URL || 'https://opencode.ai/v1',
+          apiKey: process.env.OPENCODE_GO_API_KEY || process.env.OPENCODE_API_KEY,
+          isOpenCodeGo: true
+        };
+      }
+    }
+
+    if (Object.keys(providers).length === 0) {
+      providers['default'] = { name: 'default', baseURL: null, apiKey: null };
+    }
+
+    return providers;
+  }
+
+  async fetchModelsFromProvider(provider) {
+    if (!provider.baseURL) {
+      return this.fetchModelsFromCLI(provider.name);
+    }
+
+    try {
+      const url = new URL(provider.baseURL.replace(/\/+$/, '') + '/models');
+      const headers = { 'Content-Type': 'application/json' };
+      if (provider.apiKey) headers['Authorization'] = `Bearer ${provider.apiKey}`;
+
+      const res = await fetch(url.toString(), { headers, signal: AbortSignal.timeout(10000) });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      }
+      const data = await res.json();
+      const rawModels = Array.isArray(data) ? data : (data.data || []);
+
+      return rawModels
+        .map(m => {
+          const id = m.id || m.name;
+          const normPricing = normalizePricing(m.pricing || KNOWN_MODELS_CATALOG[id]);
+          return {
+            id,
+            provider: provider.name,
+            name: m.name || m.normalized_name || id,
+            class: classifyModel(id),
+            contextLength: m.context_length || m.context_window || KNOWN_MODELS_CATALOG[id]?.context || 0,
+            maxOutput: m.max_output_tokens || m.top_provider?.max_completion_tokens || KNOWN_MODELS_CATALOG[id]?.output || 0,
+            pricing: normPricing,
+            supportsTools: (m.supported_parameters || []).includes('tools') || m.tools === true || KNOWN_MODELS_CATALOG[id]?.tools || true,
+            supportsReasoning: (m.supported_parameters || []).includes('reasoning') || m.reasoning != null || KNOWN_MODELS_CATALOG[id]?.reasoning || false,
+            raw: m
+          };
+        })
+        .filter(m => isChatCandidate(m.id, m));
+    } catch (err) {
+      console.warn(`${c.yellow}Provider ${provider.name} endpoint failed (${err.message}). Falling back to CLI models...${c.reset}`);
+      return this.fetchModelsFromCLI(provider.name);
+    }
+  }
+
+  fetchModelsFromCLI(providerName) {
+    try {
+      const out = execSync('opencode models', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
+      const lines = out.split('\n').map(l => l.trim()).filter(Boolean);
+      return lines
+        .map(line => {
+          let id = line;
+          let prov = providerName || 'default';
+          if (line.includes('/')) {
+            const parts = line.split('/');
+            prov = parts[0];
+            id = parts.slice(1).join('/');
+          }
+          const catalog = KNOWN_MODELS_CATALOG[id] || {};
+          return {
+            id,
+            fullId: line,
+            provider: prov,
+            name: catalog.name || id,
+            class: classifyModel(id),
+            contextLength: catalog.context || 0,
+            maxOutput: catalog.output || 0,
+            pricing: normalizePricing(catalog),
+            supportsTools: catalog.tools ?? true,
+            supportsReasoning: catalog.reasoning ?? false
+          };
+        })
+        .filter(m => isChatCandidate(m.id, m));
+    } catch (err) {
+      console.error(`${c.red}Failed to run 'opencode models': ${err.message}${c.reset}`);
+      return [];
+    }
+  }
+
+  findCanary(modelsInClass) {
+    const sorted = [...modelsInClass].sort((a, b) => {
+      const aCost = a.pricing?.blendedPerMillion ?? 9999;
+      const bCost = b.pricing?.blendedPerMillion ?? 9999;
+      if (aCost !== bCost) return aCost - bCost;
+
+      const cheapWords = ['mini', 'flash', 'lite', 'nano', 'small', '7b', '8b'];
+      const aCheap = cheapWords.some(w => a.id.toLowerCase().includes(w));
+      const bCheap = cheapWords.some(w => b.id.toLowerCase().includes(w));
+      if (aCheap && !bCheap) return -1;
+      if (!aCheap && bCheap) return 1;
+
+      return (a.contextLength || 0) - (b.contextLength || 0);
+    });
+    return sorted[0];
+  }
+
+  async testLevel1(model, provider) {
+    if (!provider.baseURL) {
+      return { pass: true, latency: 0 };
+    }
+    const url = new URL(provider.baseURL.replace(/\/+$/, '') + '/chat/completions');
+    const start = Date.now();
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (provider.apiKey) headers['Authorization'] = `Bearer ${provider.apiKey}`;
+
+      const res = await fetch(url.toString(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: model.id,
+          messages: [{ role: 'user', content: 'Reply with pong' }],
+          max_tokens: 50
+        }),
+        signal: AbortSignal.timeout(12000)
+      });
+
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        const text = await res.text();
+        let shortErr = `HTTP ${res.status}`;
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed.error?.message) shortErr += `: ${parsed.error.message.split('\n')[0]}`;
+        } catch {}
+        return { pass: false, status: res.status, error: shortErr, latency };
+      }
+      return { pass: true, latency };
+    } catch (err) {
+      return { pass: false, error: err.message, latency: Date.now() - start };
+    }
+  }
+
+  async testLevel2(model, provider) {
+    if (!provider.baseURL) {
+      return { pass: true, latency: 0 };
+    }
+    const url = new URL(provider.baseURL.replace(/\/+$/, '') + '/chat/completions');
+    const start = Date.now();
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (provider.apiKey) headers['Authorization'] = `Bearer ${provider.apiKey}`;
+
+      const res = await fetch(url.toString(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: model.id,
+          messages: [{ role: 'user', content: 'Call the get_weather tool for location Ann Arbor' }],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'get_weather',
+              description: 'Get weather for location',
+              parameters: {
+                type: 'object',
+                properties: { location: { type: 'string' } },
+                required: ['location']
+              }
+            }
+          }],
+          tool_choice: 'auto',
+          max_tokens: 150
+        }),
+        signal: AbortSignal.timeout(15000)
+      });
+
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        const text = await res.text();
+        return { pass: false, status: res.status, error: `HTTP ${res.status}`, latency };
+      }
+
+      const data = await res.json();
+      const choice = data.choices?.[0];
+      const hasToolCall = choice?.finish_reason === 'tool_calls' ||
+                          (choice?.message?.tool_calls && choice.message.tool_calls.length > 0);
+
+      if (hasToolCall) {
+        return { pass: true, latency };
+      } else {
+        return { pass: false, error: 'No tool call executed', latency };
+      }
+    } catch (err) {
+      return { pass: false, error: err.message, latency: Date.now() - start };
+    }
+  }
+
+  async testLevel3(model, provider) {
+    const start = Date.now();
+    try {
+      const targetModel = model.provider ? `${model.provider}/${model.id}` : model.id;
+      execSync(`opencode run -m "${targetModel}" --format json "Reply with pong"`, {
+        timeout: 30000,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      });
+      return { pass: true, latency: Date.now() - start };
+    } catch (err) {
+      return { pass: false, error: err.message, latency: Date.now() - start };
+    }
+  }
+
+  async run(pattern = null) {
+    console.log(`${c.bold}${c.cyan}=== check-models: Verifying Available Models ===${c.reset}\n`);
+
+    const targetProviderName = this.options.provider;
+    let providersToTest = Object.values(this.providers);
+    if (targetProviderName) {
+      providersToTest = providersToTest.filter(p => p.name === targetProviderName);
+      if (providersToTest.length === 0) {
+        console.error(`${c.red}Provider '${targetProviderName}' not found in configuration.${c.reset}`);
+        process.exit(1);
+      }
+    }
+
+    for (const provider of providersToTest) {
+      console.log(`${c.bold}Inspecting provider: ${c.green}${provider.name}${c.reset} (${provider.baseURL || 'CLI'})\n`);
+      const allModels = await this.fetchModelsFromProvider(provider);
+      console.log(`Discovered ${c.bold}${allModels.length}${c.reset} chat-eligible models.\n`);
+
+      let candidateModels = allModels;
+      if (pattern) {
+        const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$', 'i');
+        candidateModels = allModels.filter(m => regex.test(m.id) || regex.test(`${m.provider}/${m.id}`));
+        console.log(`Pattern '${pattern}' matches ${c.bold}${candidateModels.length}${c.reset} models.\n`);
+      }
+
+      // Group models into classes
+      const classes = new Map();
+      for (const m of candidateModels) {
+        const cls = m.class || 'default';
+        if (!classes.has(cls)) classes.set(cls, []);
+        classes.get(cls).push(m);
+      }
+
+      console.log(`Classified into ${c.bold}${classes.size}${c.reset} model classes.\n`);
+
+      const maxLevel = parseInt(this.options.level || '2', 10);
+      let classIndex = 0;
+
+      for (const [className, modelsInClass] of classes.entries()) {
+        classIndex++;
+        const canary = this.findCanary(modelsInClass);
+        const classKey = `${provider.name}:${className}`;
+        const cachedClass = this.cache.classes[classKey];
+
+        // Check if class is already known failed and we are not forcing
+        if (!this.options.force && !pattern && cachedClass && cachedClass.status === 'failed') {
+          console.log(`[${classIndex}/${classes.size}] Class ${c.yellow}${className}${c.reset}: ${c.gray}SKIPPED (Canary previously failed: ${cachedClass.error})${c.reset}`);
+          for (const m of modelsInClass) {
+            const mKey = `${provider.name}/${m.id}`;
+            if (!this.cache.models[mKey]) {
+              this.cache.models[mKey] = {
+                status: 'skipped_class_failed',
+                class: className,
+                error: cachedClass.error,
+                lastTested: new Date().toISOString()
+              };
+            }
+          }
+          continue;
+        }
+
+        // Test Canary
+        const canaryCostStr = canary.pricing ? `${formatCost(canary.pricing.blendedPerMillion)}/M` : 'n/a';
+        process.stdout.write(`[${classIndex}/${classes.size}] Class ${c.cyan}${className}${c.reset} (Canary: ${c.bold}${canary.id}${c.reset} [${canaryCostStr}])... `);
+
+        const l1 = await this.testLevel1(canary, provider);
+        if (!l1.pass) {
+          console.log(`${c.red}FAILED (${l1.error})${c.reset}`);
+          this.cache.classes[classKey] = {
+            status: 'failed',
+            canary: canary.id,
+            error: l1.error,
+            lastTested: new Date().toISOString()
+          };
+          for (const m of modelsInClass) {
+            this.cache.models[`${provider.name}/${m.id}`] = {
+              status: 'skipped_class_failed',
+              class: className,
+              error: `Class canary failed: ${l1.error}`,
+              lastTested: new Date().toISOString()
+            };
+          }
+          this.saveCache();
+          continue;
+        }
+
+        let canaryLevelPassed = 1;
+        if (maxLevel >= 2) {
+          const l2 = await this.testLevel2(canary, provider);
+          if (l2.pass) canaryLevelPassed = 2;
+        }
+        if (maxLevel >= 3 && canaryLevelPassed === 2) {
+          const l3 = await this.testLevel3(canary, provider);
+          if (l3.pass) canaryLevelPassed = 3;
+        }
+
+        console.log(`${c.green}PASS (Level ${canaryLevelPassed})${c.reset}`);
+        this.cache.classes[classKey] = {
+          status: 'ok',
+          canary: canary.id,
+          level: canaryLevelPassed,
+          lastTested: new Date().toISOString()
+        };
+
+        this.cache.models[`${provider.name}/${canary.id}`] = {
+          status: 'ok',
+          level: canaryLevelPassed,
+          class: className,
+          pricing: canary.pricing,
+          limits: { context: canary.contextLength, output: canary.maxOutput },
+          supportsReasoning: canary.supportsReasoning,
+          lastTested: new Date().toISOString()
+        };
+
+        if (this.options.canaryOnly) {
+          this.saveCache();
+          continue;
+        }
+
+        // Test other models in this class
+        const remaining = modelsInClass.filter(m => m.id !== canary.id);
+        for (const m of remaining) {
+          const mKey = `${provider.name}/${m.id}`;
+          if (!this.options.force && this.cache.models[mKey] && this.cache.models[mKey].status === 'ok') {
+            continue;
+          }
+
+          process.stdout.write(`    Testing ${c.dim}${m.id}${c.reset}... `);
+          const mL1 = await this.testLevel1(m, provider);
+          if (!mL1.pass) {
+            console.log(`${c.red}L1 Fail (${mL1.error})${c.reset}`);
+            this.cache.models[mKey] = {
+              status: 'failed',
+              class: className,
+              error: mL1.error,
+              lastTested: new Date().toISOString()
+            };
+            continue;
+          }
+
+          let mLevelPassed = 1;
+          if (maxLevel >= 2) {
+            const mL2 = await this.testLevel2(m, provider);
+            if (mL2.pass) mLevelPassed = 2;
+          }
+          if (maxLevel >= 3 && mLevelPassed === 2) {
+            const mL3 = await this.testLevel3(m, provider);
+            if (mL3.pass) mLevelPassed = 3;
+          }
+
+          console.log(`${c.green}L${mLevelPassed} OK${c.reset}`);
+          this.cache.models[mKey] = {
+            status: 'ok',
+            level: mLevelPassed,
+            class: className,
+            pricing: m.pricing,
+            limits: { context: m.contextLength, output: m.maxOutput },
+            supportsReasoning: m.supportsReasoning,
+            lastTested: new Date().toISOString()
+          };
+        }
+
+        this.saveCache();
+      }
+    }
+
+    console.log(`\n${c.bold}${c.green}✔ Check completed. Results cached at:${c.reset} ${CACHE_FILE}\n`);
+    console.log(`Run ${c.cyan}check-models report${c.reset} to view top recommendations.`);
+  }
+
+  generateReport() {
+    const workingModels = Object.entries(this.cache.models)
+      .filter(([_, data]) => data.status === 'ok' && data.level >= 2)
+      .map(([key, data]) => {
+        const parts = key.split('/');
+        const provider = parts[0];
+        const id = parts.slice(1).join('/');
+        const m = {
+          key,
+          provider,
+          id,
+          level: data.level,
+          pricing: data.pricing,
+          limits: data.limits || {},
+          supportsReasoning: data.supportsReasoning,
+          blendedCost: data.pricing?.blendedPerMillion ?? 9999
+        };
+        m.bang = calculateBang(m);
+        return m;
+      });
+
+    if (workingModels.length === 0) {
+      console.log(`${c.yellow}No verified working models found in cache.${c.reset}`);
+      console.log(`Run ${c.cyan}check-models${c.reset} first to test models.`);
+      return;
+    }
+
+    // Archetype 1: Daily Driver / Workhorse (Sweet spot of intelligence, tool use, 1M context, balanced cost)
+    // Excludes lite/nano/micro/haiku/preview
+    const workhorseCandidates = workingModels.filter(m => {
+      const id = m.id.toLowerCase();
+      const isLite = id.includes('lite') || id.includes('nano') || id.includes('micro') || id.includes('haiku') || id.includes('preview');
+      return m.bang >= 75 && !isLite;
+    }).sort((a, b) => {
+      const aScore = Math.pow(a.bang, 1.3) / Math.max(0.7, a.blendedCost);
+      const bScore = Math.pow(b.bang, 1.3) / Math.max(0.7, b.blendedCost);
+      return bScore - aScore;
+    });
+
+    const bestWorkhorse = workhorseCandidates[0];
+
+    // Archetype 2: Heavy Reasoning & Architecture (Peak cognitive capability)
+    const reasoningCandidates = workingModels.filter(m => {
+      const id = m.id.toLowerCase();
+      return id.includes('opus') || id.includes('o3') || id.includes('r1') || id.includes('pro');
+    }).sort((a, b) => {
+      const aScore = Math.pow(a.bang, 2.5) / (a.blendedCost + 5.0);
+      const bScore = Math.pow(b.bang, 2.5) / (b.blendedCost + 5.0);
+      return bScore - aScore;
+    });
+
+    const bestReasoning = reasoningCandidates[0];
+
+    // Archetype 3: Fast / Cheap Subagent (Maximum throughput & rock-bottom cost)
+    const subagents = workingModels.filter(m => m.blendedCost <= 1.50)
+      .sort((a, b) => {
+        const aScore = a.bang / Math.pow(a.blendedCost, 0.7);
+        const bScore = b.bang / Math.pow(b.blendedCost, 0.7);
+        return bScore - aScore;
+      });
+
+    const bestSubagent = subagents[0];
+
+    // Assemble top 3-5 recommendations avoiding duplicates from the exact same line
+    const recommendations = [];
+    const seenKeys = new Set();
+    const seenFamilies = new Set();
+
+    const getFamily = (id) => {
+      const lower = id.toLowerCase();
+      if (lower.includes('haiku')) return 'haiku';
+      if (lower.includes('sonnet')) return 'sonnet';
+      if (lower.includes('opus')) return 'opus';
+      if (lower.includes('flash-lite')) return 'flash-lite';
+      if (lower.includes('flash')) return 'flash';
+      if (lower.includes('pro')) return 'pro';
+      return lower.split('/')[0];
+    };
+
+    const addRec = (m, archetype, rationale) => {
+      if (!m || seenKeys.has(m.key)) return;
+      seenKeys.add(m.key);
+      seenFamilies.add(getFamily(m.id));
+      recommendations.push({ ...m, archetype, rationale });
+    };
+
+    if (bestWorkhorse) {
+      addRec(bestWorkhorse, '🛠️ Daily Driver / Workhorse', 'Ideal balance of high intelligence, 1M context, reliable tool calling, and economical pricing.');
+    }
+    if (bestReasoning) {
+      addRec(bestReasoning, '🧠 Heavy Reasoning & Architecture', 'Top cognitive capability for complex multi-file refactoring, debugging, and systems design.');
+    }
+    if (bestSubagent) {
+      addRec(bestSubagent, '🚀 Fast & Cheap Subagent', 'Minimal cost and high throughput for searches, exploration, and small utility tasks.');
+    }
+
+    // Add high-tier alternatives (e.g. flagship Sonnet if Gemini is workhorse, or budget subagent)
+    for (const m of workhorseCandidates) {
+      if (recommendations.length >= 5) break;
+      const fam = getFamily(m.id);
+      if (!seenFamilies.has(fam) && !seenKeys.has(m.key)) {
+        addRec(m, '⚡ Premier Workhorse Alternative', 'High-capability frontier workhorse with proven deep reasoning and coding proficiency.');
+      }
+    }
+
+    for (const m of subagents) {
+      if (recommendations.length >= 5) break;
+      const fam = getFamily(m.id);
+      if (!seenFamilies.has(fam) && !seenKeys.has(m.key)) {
+        addRec(m, '⚡ Value Alternative', 'Economical option with generous context and fast response times.');
+      }
+    }
+
+    const date = new Date().toISOString().split('T')[0];
+    let md = `# OpenCode Model Recommendations (${date})\n\n`;
+    md += `Based on live capability testing, quality weighting (Bang), and exact gateway pricing (Buck), here is the shortlist of **top ${recommendations.length} models** giving the highest bang for the buck.\n\n`;
+
+    md += `## Recommended Shortlist\n\n`;
+    md += `| Role | Model | Quality Score | Context | Cost (Prompt / Output) | Blended / 1M |\n`;
+    md += `| :--- | :--- | :---: | :---: | :--- | :---: |\n`;
+
+    for (const r of recommendations) {
+      const promptStr = formatCost(r.pricing?.promptPerMillion);
+      const compStr = formatCost(r.pricing?.completionPerMillion);
+      const blendedStr = formatCost(r.pricing?.blendedPerMillion);
+      const ctxStr = r.limits.context ? `${Math.round(r.limits.context / 1000)}k` : 'unknown';
+      md += `| **${r.archetype}** | \`${r.key}\` | **${r.bang}/100** | ${ctxStr} | ${promptStr} / ${compStr} | **${blendedStr}** |\n`;
+    }
+
+    md += `\n### Detailed Analysis\n\n`;
+    for (const r of recommendations) {
+      md += `#### ${r.archetype}: \`${r.key}\`\n`;
+      md += `- **Why:** ${r.rationale}\n`;
+      md += `- **Quality Rating:** ${r.bang}/100\n`;
+      md += `- **Context Window:** ${r.limits.context ? r.limits.context.toLocaleString() + ' tokens' : 'Standard'}\n`;
+      if (r.pricing) {
+        md += `- **Pricing:** ${formatCost(r.pricing.promptPerMillion)} / 1M prompt tokens, ${formatCost(r.pricing.completionPerMillion)} / 1M output tokens\n`;
+      }
+      md += `- **OpenCode Usage:**\n`;
+      md += `  \`\`\`json\n  {\n    "model": "${r.key}"\n  }\n  \`\`\`\n\n`;
+    }
+
+    md += `## All Working Models Summary\n\n`;
+    md += `Total models verified working (Level 2+ tool calling): **${workingModels.length}**\n\n`;
+    md += `To configure OpenCode to only display working models, run:\n`;
+    md += `\`\`\`bash\ncheck-models configure\n\`\`\`\n`;
+
+    // Save report to file
+    try {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+      fs.writeFileSync(REPORT_FILE, md, 'utf8');
+      const recJson = {
+        updated: date,
+        recommendations: recommendations.map(r => ({
+          archetype: r.archetype,
+          model: r.key,
+          quality: r.bang,
+          costBlended: r.pricing?.blendedPerMillion
+        }))
+      };
+      fs.writeFileSync(RECOMMENDED_FILE, JSON.stringify(recJson, null, 2), 'utf8');
+    } catch (err) {
+      console.warn(`${c.yellow}Warning: Could not save report file: ${err.message}${c.reset}`);
+    }
+
+    console.log(md);
+    console.log(`\n${c.gray}Report saved to: ${REPORT_FILE}${c.reset}`);
+  }
+
+  configureOpenCode(dryRun = false) {
+    const { filePath, rawContent } = loadOpenCodeConfig();
+    if (!filePath) {
+      console.error(`${c.red}No OpenCode configuration file found (~/.config/opencode/opencode.jsonc).${c.reset}`);
+      return;
+    }
+
+    const workingModels = Object.entries(this.cache.models)
+      .filter(([_, data]) => data.status === 'ok' && data.level >= 2)
+      .map(([key]) => key);
+
+    if (workingModels.length === 0) {
+      console.error(`${c.red}No working models in cache. Run check-models first.${c.reset}`);
+      return;
+    }
+
+    console.log(`Found ${c.bold}${workingModels.length}${c.reset} verified working models.`);
+
+    // Extract bare model IDs for include regex
+    const bareIds = workingModels.map(k => {
+      const parts = k.split('/');
+      return parts.slice(1).join('/');
+    });
+
+    const regexPattern = `^(${bareIds.map(id => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`;
+
+    console.log(`\nProposed update to ${c.cyan}${filePath}${c.reset}:`);
+    console.log(`Set ${c.green}modelsDiscovery.models.includeBy${c.reset} to match the ${bareIds.length} working models.\n`);
+
+    if (dryRun) {
+      console.log(`${c.yellow}[Dry run: no changes written]${c.reset}`);
+      return;
+    }
+
+    const backupPath = `${filePath}.bak.${Date.now()}`;
+    fs.writeFileSync(backupPath, rawContent, 'utf8');
+    console.log(`Backed up existing config to ${c.dim}${backupPath}${c.reset}`);
+
+    try {
+      const parsed = JSON.parse(stripJsonComments(rawContent));
+      const providerKey = Object.keys(parsed.provider || parsed.providers || {})[0] || 'bifrost';
+
+      if (!parsed.provider) parsed.provider = {};
+      if (!parsed.provider[providerKey]) parsed.provider[providerKey] = {};
+      if (!parsed.provider[providerKey].options) parsed.provider[providerKey].options = {};
+      if (!parsed.provider[providerKey].options.modelsDiscovery) parsed.provider[providerKey].options.modelsDiscovery = {};
+
+      parsed.provider[providerKey].options.modelsDiscovery.models = {
+        includeBy: [{ field: 'id', match: regexPattern }]
+      };
+
+      fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2), 'utf8');
+      console.log(`${c.green}✔ Updated ${filePath} successfully.${c.reset}`);
+      console.log(`Restart OpenCode service to apply: ${c.cyan}opencode service restart${c.reset}`);
+    } catch (err) {
+      console.error(`${c.red}Failed to update config: ${err.message}${c.reset}`);
+    }
+  }
+
+  listCached() {
+    const entries = Object.entries(this.cache.models);
+    console.log(`${c.bold}Cached Models (${entries.length}):${c.reset}\n`);
+    for (const [key, data] of entries) {
+      const statusColor = data.status === 'ok' ? c.green : (data.status === 'failed' ? c.red : c.gray);
+      const levelStr = data.level ? `[L${data.level}]` : '';
+      console.log(`- ${key.padEnd(50)} ${statusColor}${data.status.padEnd(14)}${c.reset} ${levelStr} ${data.error ? c.dim + data.error + c.reset : ''}`);
+    }
+  }
+
+  cleanCache() {
+    if (fs.existsSync(CACHE_FILE)) {
+      fs.unlinkSync(CACHE_FILE);
+      console.log(`${c.green}Cache file removed: ${CACHE_FILE}${c.reset}`);
+    } else {
+      console.log('Cache is already empty.');
+    }
+  }
+}
+
+function printHelp() {
+  console.log(`
+${c.bold}check-models${c.reset} - Test and verify working models across OpenCode providers
+
+${c.bold}USAGE${c.reset}
+  check-models [command] [options] [pattern]
+
+${c.bold}COMMANDS${c.reset}
+  run [pattern]         Test models (default). Incremental by default.
+  report                Print a markdown report with top 3-5 bang-for-buck models.
+  configure             Configure OpenCode to only discover verified working models.
+  list                  List cached test results.
+  clean                 Clear the cache file.
+
+${c.bold}OPTIONS${c.reset}
+  --force, -f           Ignore cache and recheck models.
+  --canary-only         Only test the cheapest canary model in each class.
+  --level <1|2|3>       Max test level (1=chat, 2=tools, 3=harness, default: 2).
+  --provider <name>     Test specific provider (e.g. bifrost, opencode-go).
+  --dry-run             Show changes without writing (for configure).
+  --help, -h            Show this help.
+
+${c.bold}EXAMPLES${c.reset}
+  check-models
+  check-models "vertex/*"
+  check-models "openrouter/deepseek*"
+  check-models --canary-only
+  check-models report
+  check-models configure --dry-run
+`);
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  let command = 'run';
+  let pattern = null;
+  const options = {
+    force: false,
+    canaryOnly: false,
+    level: 2,
+    provider: null,
+    dryRun: false
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--help' || arg === '-h') {
+      printHelp();
+      return;
+    } else if (arg === '--force' || arg === '-f' || arg === 'full') {
+      options.force = true;
+    } else if (arg === '--canary-only') {
+      options.canaryOnly = true;
+    } else if (arg === '--dry-run') {
+      options.dryRun = true;
+    } else if (arg === '--level' && args[i + 1]) {
+      options.level = parseInt(args[++i], 10);
+    } else if (arg === '--provider' && args[i + 1]) {
+      options.provider = args[++i];
+    } else if (['run', 'report', 'configure', 'list', 'clean'].includes(arg)) {
+      command = arg;
+    } else if (!arg.startsWith('-')) {
+      pattern = arg;
+    }
+  }
+
+  const checker = new ModelChecker(options);
+
+  if (command === 'clean') {
+    checker.cleanCache();
+  } else if (command === 'list') {
+    checker.listCached();
+  } else if (command === 'report') {
+    checker.generateReport();
+  } else if (command === 'configure') {
+    checker.configureOpenCode(options.dryRun);
+  } else {
+    await checker.run(pattern);
+  }
+}
+
+main().catch(err => {
+  console.error(`${c.red}Fatal error: ${err.message}${c.reset}`);
+  process.exit(1);
+});
