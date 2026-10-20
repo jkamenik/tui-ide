@@ -1,4 +1,5 @@
 {
   "$schema": "https://opencode.ai/v2/cli.json",
-  "theme": { "name": "warm-burnout", "mode": "system" }
+  "theme": { "name": "warm-burnout", "mode": "system" },
+  "plugins": ["./herdr-opencode", "./model-recommendation"]
 }

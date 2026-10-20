@@ -91,7 +91,7 @@ opencode --version       # 2.x (ADR-0032)
 test -x bin/git-cleanup  # repo helper script (ADR-0033)
 test -x bin/check-models   # model testing script (ADR-0037)
 test -L ~/.config/opencode/plugins/herdr-worktree-open.js  # stowed plugin (ADR-0036)
-test -L ~/.config/opencode/plugins/model-recommendation.js # stowed recommendation banner plugin (ADR-0037)
+test -L ~/.config/opencode/model-recommendation/tui.js     # stowed recommendation banner plugin (ADR-0037)
 test ! -L ~/.zshrc       # machine-owned; sources the tracked rc (ADR-0034)
 test ! -L ~/.gitconfig   # machine-owned; includes the tracked config (ADR-0035)
 ! command -v nono        # retired by ADR-0031
