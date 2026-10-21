@@ -1,5 +1,11 @@
 {
   "$schema": "https://opencode.ai/v2/cli.json",
   "theme": { "name": "warm-burnout", "mode": "system" },
-  "plugins": ["./herdr-opencode", "./model-recommendation"]
+  "plugins": ["./herdr-opencode", "./model-recommendation"],
+  "keybinds": {
+    "input.line.home": "ctrl+a,home",
+    "input.line.end": "ctrl+e,end",
+    "session.first": "ctrl+g,alt+home",
+    "session.last": "ctrl+alt+g"
+  }
 }

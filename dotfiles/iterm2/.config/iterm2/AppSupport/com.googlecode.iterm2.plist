@@ -1086,6 +1086,24 @@
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
+				<key>0xf702-0x100000-0x7b-0x1</key>
+				<dict>
+					<key>Action</key>
+					<integer>11</integer>
+					<key>Text</key>
+					<string>0x1b 0x5b 0x48</string>
+					<key>Version</key>
+					<integer>2</integer>
+				</dict>
+				<key>0xf703-0x100000-0x7c-0x1</key>
+				<dict>
+					<key>Action</key>
+					<integer>11</integer>
+					<key>Text</key>
+					<string>0x1b 0x5b 0x46</string>
+					<key>Version</key>
+					<integer>2</integer>
+				</dict>
 			</dict>
 			<key>Link Color</key>
 			<dict>
