@@ -56,7 +56,7 @@ flowchart TB
 | Neovim | Editor | Human editing surface; agent lives in the opencode TUI. `$EDITOR`, and `vi` by alias |
 | devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet |
 | Claude Code | Agent CLI | Alternate agent surface; plain binary on `$PATH` since ADR-0031; user settings merged from a tracked template, hooks left local |
-| opencode | Agent CLI | Primary agent surface, plain binary on `$PATH` since ADR-0031; on the 2.x line from `anomalyco/tap` ([ADR-0032](adr/0032-track-the-opencode-2.x-line.md)); a custom provider must name its runtime package on 2.x |
+| opencode | Agent CLI | Primary agent surface, plain binary on `$PATH` since ADR-0031, its TUI launch wrapped in `caffeinate -i` on macOS ([ADR-0039](adr/0039-caffeinate-the-opencode-tui.md)); on the 2.x line from `anomalyco/tap` ([ADR-0032](adr/0032-track-the-opencode-2.x-line.md)); a custom provider must name its runtime package on 2.x |
 | opencode plugins | herdr worktree integration | The tracked `herdr-worktree-open.js` is stowed into `~/.config/opencode/plugins/` and opens opencode-created worktrees in herdr's sidebar ([ADR-0036](adr/0036-stow-the-herdr-worktree-open-plugin.md)) |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
 | Homebrew | Package manager | Same toolchain on macOS and Linuxbrew |
@@ -113,7 +113,12 @@ flowchart TB
   own sandbox off.
 - **Agents:** `opencode` and `claude` are plain binaries on `$PATH`. Each agent
   is the pane's foreground process, which is what herdr reads to identify it in
-  the agents view, so no wrapper hint is needed. The nono sandbox, its profile
+  the agents view, so no wrapper hint is needed. On macOS a tracked zsh function
+  launches the opencode TUI under `caffeinate -i`, keeping the Mac awake while a
+  TUI is open; `caffeinate` execs the binary in place, so the foreground process
+  stays `opencode`, and server subcommands run unwrapped
+  ([ADR-0039](adr/0039-caffeinate-the-opencode-tui.md)).
+  The nono sandbox, its profile
   derivation, its pack pin, and its `HERDR_AGENT` label are all retired
   ([ADR-0031](adr/0031-retire-the-nono-sandbox.md));
   `uninstall-nono-supacode.sh` at the repo root cleans machines provisioned
@@ -212,7 +217,7 @@ record that replaced them.
 | [0028](adr/0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Superseded by [0031](adr/0031-retire-the-nono-sandbox.md) |
 | [0029](adr/0029-go-task-as-task-runner.md) | go-task as the task runner | Accepted |
 | [0030](adr/0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted |
-| [0031](adr/0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted |
+| [0031](adr/0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted, amended by [0039](adr/0039-caffeinate-the-opencode-tui.md) |
 | [0032](adr/0032-track-the-opencode-2.x-line.md) | Track the opencode 2.x line | Accepted |
 | [0033](adr/0033-repo-scripts-in-bin-on-path.md) | Repo helper scripts in `bin/` on `$PATH` through a local overlay | Accepted |
 | [0034](adr/0034-machine-owned-zshrc-sources-tracked-config.md) | Let the machine own `~/.zshrc` and source a tracked shell config | Accepted |
@@ -220,3 +225,4 @@ record that replaced them.
 | [0036](adr/0036-stow-the-herdr-worktree-open-plugin.md) | Stow the herdr worktree-open opencode plugin | Accepted |
 | [0037](adr/0037-check-models-tool-and-skill.md) | Model capability testing via `check-models` and an OpenCode skill | Accepted |
 | [0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md) | Remove merged Git worktrees and Herdr workspaces in `git-cleanup` | Accepted |
+| [0039](adr/0039-caffeinate-the-opencode-tui.md) | Caffeinate the opencode TUI launch on macOS | Accepted |

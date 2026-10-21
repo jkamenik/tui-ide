@@ -1,6 +1,6 @@
 # tui-ide-ADR-0031: Retire the nono agent sandbox
 
-**Status:** Accepted
+**Status:** Accepted, amended by [ADR-0039](0039-caffeinate-the-opencode-tui.md)
 **Date:** 2026-10-12
 **Supersedes:** [ADR-0020](0020-sandbox-agent-clis-with-nono.md),
 [ADR-0021](0021-derive-nono-profile-from-observed-use.md),

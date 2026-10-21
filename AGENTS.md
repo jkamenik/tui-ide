@@ -93,15 +93,20 @@ test -x bin/check-models   # model testing script (ADR-0037)
 test -L ~/.config/opencode/plugins/herdr-worktree-open.js  # stowed plugin (ADR-0036)
 test -L ~/.config/opencode/model-recommendation/tui.js     # stowed recommendation banner plugin (ADR-0037)
 test ! -L ~/.zshrc       # machine-owned; sources the tracked rc (ADR-0034)
+[[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w opencode' | grep -q 'opencode: function'  # caffeinate wrapper, macOS only (ADR-0039)
 test ! -L ~/.gitconfig   # machine-owned; includes the tracked config (ADR-0035)
 ! command -v nono        # retired by ADR-0031
 ! command -v supacode    # self-installed; cleaned by uninstall-nono-supacode.sh
 ```
 
-`opencode` and `claude` are the plain binaries on `$PATH`: no zsh wrapper and
-no sandbox, so herdr labels the agent from the pane's foreground process and a
-session reaches everything the user can reach
-([ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md)).
+`opencode` and `claude` are the plain binaries on `$PATH`: no sandbox, so
+herdr labels the agent from the pane's foreground process and a session
+reaches everything the user can reach
+([ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md)). The single exception
+is a macOS zsh function that execs the opencode TUI under `caffeinate -i` so
+the Mac stays awake while a TUI runs; the exec keeps the foreground process
+name `opencode`, and server subcommands run unwrapped
+([ADR-0039](docs/adr/0039-caffeinate-the-opencode-tui.md)).
 
 The opencode 2.x switch was landed with
 [docs/runbooks/upgrade-to-opencode2.md](docs/runbooks/upgrade-to-opencode2.md)

@@ -39,7 +39,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0028](0028-pre-create-opencode-state-dirs-at-bootstrap.md) | Pre-create opencode's state directories at bootstrap | Superseded by [0031](0031-retire-the-nono-sandbox.md) | 2026-10-06 |
 | [0029](0029-go-task-as-task-runner.md) | go-task as the task runner | Accepted | 2026-10-07 |
 | [0030](0030-stow-the-global-opencode-agents-md.md) | Stow the global opencode AGENTS.md | Accepted | 2026-10-08 |
-| [0031](0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted | 2026-10-13 |
+| [0031](0031-retire-the-nono-sandbox.md) | Retire the nono agent sandbox | Accepted, amended by [0039](0039-caffeinate-the-opencode-tui.md) | 2026-10-13 |
 | [0032](0032-track-the-opencode-2.x-line.md) | Track the opencode 2.x line | Accepted | 2026-10-13 |
 | [0033](0033-repo-scripts-in-bin-on-path.md) | Repo helper scripts live in `bin/` and reach `$PATH` through a local overlay | Accepted | 2026-10-14 |
 | [0034](0034-machine-owned-zshrc-sources-tracked-config.md) | Let the machine own `~/.zshrc` and source a tracked shell config | Accepted | 2026-10-15 |
@@ -47,6 +47,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0036](0036-stow-the-herdr-worktree-open-plugin.md) | Stow the herdr worktree-open opencode plugin | Accepted | 2026-10-15 |
 | [0037](0037-check-models-tool-and-skill.md) | Model capability testing via `check-models` and an OpenCode skill | Accepted | 2026-10-20 |
 | [0038](0038-remove-merged-worktrees-in-git-cleanup.md) | Remove merged Git worktrees and Herdr workspaces in `git-cleanup` | Accepted | 2026-10-20 |
+| [0039](0039-caffeinate-the-opencode-tui.md) | Caffeinate the opencode TUI launch on macOS | Accepted | 2026-10-21 |
 
 
 ## Format

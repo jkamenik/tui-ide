@@ -133,9 +133,37 @@ alias vi=nvim
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# `opencode` and `claude` are the plain binaries on $PATH. The nono wrappers
-# they used to run under are retired (ADR-0031), so the agent is the pane's
-# foreground process and herdr identifies it without a HERDR_AGENT hint.
+# `claude` is the plain binary on $PATH. The nono wrappers both agents used to
+# run under are retired (ADR-0031), so the agent is the pane's foreground
+# process and herdr identifies it without a HERDR_AGENT hint.
+
+# macOS: a long agent turn dies to idle sleep, so launch the opencode TUI
+# under `caffeinate -i`, which holds an idle-sleep assertion for exactly as
+# long as the TUI runs. caffeinate forks and execs the command in its parent,
+# so the job keeps its pid, keeps the name `opencode`, and stays the pane's
+# foreground process (ADR-0031's herdr property survives); a watcher child
+# owns the assertion and exits when the TUI dies, releasing it. The detached
+# `opencode serve --service` daemon lives outside that lifetime and never
+# holds sleep back. Only the TUI launch is wrapped — a bare invocation, flags,
+# or a directory argument; any subcommand (run, service, serve, acp, ...)
+# execs the plain binary so the server can never end up under caffeinate.
+# See ADR-0039.
+if [[ "$OSTYPE" == darwin* ]] && [[ -n "${commands[caffeinate]:-}" ]] \
+   && [[ -n "${commands[opencode]:-}" ]]; then
+  opencode() {
+    local bin="${commands[opencode]}"
+    case "${1:-}" in
+      '' | -*)
+        caffeinate -i "$bin" "$@" ;;
+      *)
+        if [[ -d "$1" ]]; then
+          caffeinate -i "$bin" "$@"   # `opencode <dir>` also opens the TUI
+        else
+          "$bin" "$@"
+        fi ;;
+    esac
+  }
+fi
 
 # Load nvm so project-pinned Node versions resolve. `--no-use` defers
 # switching off the system Node until a .nvmrc selects one, so an unversioned
