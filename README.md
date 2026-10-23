@@ -131,7 +131,27 @@ the 1.x formula must uninstall it first: `brew uninstall opencode`, then run
 `install.sh`, and `brew uninstall opencode-v2 && ./install.sh`.
 
 The agent config itself, `~/.config/opencode/opencode.json(c)`, stays
-machine-local and untracked. A custom provider must name its runtime package on
+machine-local and untracked. A tracked template is available at
+`dotfiles/opencode/.config/opencode/opencode.jsonc.example`. On a fresh machine,
+`install.sh` seeds `~/.config/opencode/opencode.jsonc` from this template if neither
+`opencode.jsonc` nor `opencode.json` exists.
+
+To configure or update an existing installation on another machine:
+1. Copy or merge `dotfiles/opencode/.config/opencode/opencode.jsonc.example` into
+   `~/.config/opencode/opencode.jsonc`.
+2. Ensure a default model is set at the root (e.g. `"model": "bifrost/vertex/gemini-3.8-flash"`).
+3. Under `modelsDiscovery`, enable persistent storage caching:
+   ```jsonc
+   "cache": {
+     "enabled": true,
+     "ttlSeconds": 86400
+   }
+   ```
+   This allows OpenCode to cache discovered models in host storage (`ctx.storage`),
+   preventing empty model catalogs and race conditions when opening new Git worktrees.
+4. Run `opencode service restart` to apply.
+
+A custom provider must name its runtime package on
 2.x, where 1.x defaulted to the OpenAI-compatible SDK: without it the first
 request fails with `Unsupported package for <provider>/<model>`. The one-line
 addition to an existing v1-shaped provider entry is

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "bifrost/vertex/gemini-3.8-flash",
+  "mcp": {
+    "todoist": {
+      "type": "remote",
+      "url": "https://ai.todoist.net/mcp",
+      "enabled": true
+    },
+    "bifrost": {
+      "type": "remote",
+      "url": "https://bifrost.ops.cencorp.io/mcp",
+      "headers": {
+        "Authorization": "Bearer {env:BIFROST_API_KEY}"
+      }
+    },
+    "atlassian": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v2/mcp",
+      "enabled": true
+    }
+  },
+  "plugin": [
+    "opencode-models-discovery@latest"
+  ],
+  "permission": {
+    "external_directory": {
+      "/tmp/**": "allow",
+      "/private/tmp/**": "allow",
+      "/var/folders/**": "allow"
+    }
+  },
+  "provider": {
+    "bifrost": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://bifrost.ops.cencorp.io/v1",
+        "apiKey": "{env:BIFROST_API_KEY}",
+        "modelsDiscovery": {
+          "enabled": true,
+          "modelInfoFormat": "bifrost",
+          "cache": {
+            "enabled": true,
+            "ttlSeconds": 86400
+          },
+          "models": {
+            "includeBy": [
+              {
+                "field": "id",
+                "match": "^(vertex/gemini-2\\.5-flash-lite|vertex/gemini-3\\.8-flash|vertex/claude-haiku-5-5|vertex/claude-fable-5|vertex/claude-fable-5-1|vertex/claude-haiku-4-5|vertex/claude-opus-4-5|vertex/claude-opus-4-6|vertex/claude-opus-4-7|vertex/claude-opus-4-8|vertex/claude-opus-5|vertex/claude-opus-5-5|vertex/claude-sonnet-4-6|vertex/claude-sonnet-5|vertex/claude-sonnet-5-5|vertex/gemini-2\\.5-flash|vertex/gemini-2\\.5-pro|vertex/gemini-3-flash-preview|vertex/gemini-3-pro-image|vertex/gemini-3\\.1-flash-image|vertex/gemini-3\\.1-flash-lite|vertex/gemini-3\\.5-flash|vertex/gemini-3\\.5-flash-lite|vertex/gemini-3\\.6-flash|vertex/gemini-3\\.7-flash|vertex/gemini-4-argon)$"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "enabled_providers": [
+    "bifrost"
+  ]
+}

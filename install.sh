@@ -327,6 +327,26 @@ if have opencode; then
     echo "    example has moved since this was seeded, merge by hand:"
     echo "      diff -u '$REPO_DIR/dotfiles/opencode/.config/opencode/$opencode_example' '$opencode_config'"
   fi
+
+  opencode_server_config="$HOME/.config/opencode/opencode.jsonc"
+  opencode_server_json="$HOME/.config/opencode/opencode.json"
+  opencode_server_example="opencode.jsonc.example"
+
+  if [ -L "$opencode_server_config" ] || [ -L "$opencode_server_json" ]; then
+    echo "==> ~/.config/opencode/opencode.json(c) is a link; leaving it alone"
+  elif [ ! -f "$opencode_server_config" ] && [ ! -f "$opencode_server_json" ]; then
+    mkdir -p "$HOME/.config/opencode"
+    cp "$REPO_DIR/dotfiles/opencode/.config/opencode/$opencode_server_example" "$opencode_server_config"
+    echo "==> Installed the opencode server config from dotfiles/opencode"
+    echo "    Edit ~/.config/opencode/opencode.jsonc for machine-local credentials and provider settings"
+  else
+    existing_server_config="$opencode_server_config"
+    [ -f "$existing_server_config" ] || existing_server_config="$opencode_server_json"
+    echo "==> $existing_server_config exists; left alone (copy-once)"
+    echo "    Tracked changes to $opencode_server_example are NOT applied to it. If the"
+    echo "    example has moved since this was seeded, merge by hand:"
+    echo "      diff -u '$REPO_DIR/dotfiles/opencode/.config/opencode/$opencode_server_example' '$existing_server_config'"
+  fi
 else
   echo "==> opencode is not installed; skipping the client config. Re-run install.sh after installing it."
 fi

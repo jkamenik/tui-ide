@@ -1067,6 +1067,13 @@ class ModelChecker {
       if (!parsed.provider[providerKey].options) parsed.provider[providerKey].options = {};
       if (!parsed.provider[providerKey].options.modelsDiscovery) parsed.provider[providerKey].options.modelsDiscovery = {};
 
+      if (!parsed.provider[providerKey].options.modelsDiscovery.cache) {
+        parsed.provider[providerKey].options.modelsDiscovery.cache = {
+          enabled: true,
+          ttlSeconds: 86400
+        };
+      }
+
       parsed.provider[providerKey].options.modelsDiscovery.models = {
         includeBy: [{ field: 'id', match: regexPattern }]
       };
