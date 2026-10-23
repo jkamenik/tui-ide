@@ -67,7 +67,7 @@ flowchart TB
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
 | obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled. Optional: loaded only when the local overlay names a workspace that exists on disk |
 | mini.map | Minimap | Floating buffer overview on the right, `<leader>vm`; search and diagnostic highlights |
-| `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, `check-models`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0037](adr/0037-check-models-tool-and-skill.md), [ADR-0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md)) |
+| `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, `git-workspace`, `check-models`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0037](adr/0037-check-models-tool-and-skill.md), [ADR-0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md), [ADR-0040](adr/0040-create-and-open-worktrees-in-git-workspace.md)) |
 
 ## Cross-Machine Model
 
@@ -98,7 +98,9 @@ flowchart TB
   `~/.gitconfig.local`, which holds identity and the 1Password SSH signing agent
   path.
 - **Repo scripts:** `bin/` at the repo root holds tracked helper scripts
-  (`git-cleanup`, `check-models`). `git-cleanup` brings a checkout in sync with
+  (`git-cleanup`, `git-workspace`, `check-models`). `git-workspace` creates or
+  focuses linked worktrees in Herdr and OpenCode ([ADR-0040](adr/0040-create-and-open-worktrees-in-git-workspace.md)).
+  `git-cleanup` brings a checkout in sync with
   the remote, prunes clean merged/gone worktrees and their Herdr workspaces, and
   deletes stale local branches ([ADR-0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md)).
   `install.sh` puts it on `$PATH` by seeding a generated `~/.zshrc.local`, which
@@ -226,3 +228,4 @@ record that replaced them.
 | [0037](adr/0037-check-models-tool-and-skill.md) | Model capability testing via `check-models` and an OpenCode skill | Accepted |
 | [0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md) | Remove merged Git worktrees and Herdr workspaces in `git-cleanup` | Accepted |
 | [0039](adr/0039-caffeinate-the-opencode-tui.md) | Caffeinate the opencode TUI launch on macOS | Accepted |
+| [0040](adr/0040-create-and-open-worktrees-in-git-workspace.md) | Create and open Git worktrees with `git-workspace` | Accepted |
