@@ -81,11 +81,15 @@ load_state() {
   ds_b="$(pmset_val Battery displaysleep)";    ds_b="${ds_b:-?}"
   ds_ac="$(pmset_val AC displaysleep)";        ds_ac="${ds_ac:-?}"
 
-  # disablesleep is global; it may be absent from `pmset -g custom` when unset.
+  # disablesleep is global and never appears in `pmset -g custom`; `pmset -g`
+  # lists it under "System-wide power settings" as SleepDisabled — a different
+  # spelling from the `disablesleep` key you set it with. Matching only the
+  # key name made this always fall through to 0, so `on` could never confirm
+  # itself even when pmset had applied it.
   disablesleep="$(pmset_val Battery disablesleep)"
   if [ -z "$disablesleep" ]; then disablesleep="$(pmset_val AC disablesleep)"; fi
   if [ -z "$disablesleep" ]; then
-    disablesleep="$(pmset -g 2>/dev/null | awk '$1 == "disablesleep" { print $2; exit }')"
+    disablesleep="$(pmset -g 2>/dev/null | awk '$1 == "SleepDisabled" || $1 == "disablesleep" { print $2; exit }')"
   fi
   disablesleep="${disablesleep:-0}"
 
@@ -166,6 +170,29 @@ print_status() {
 
 # --- actions -------------------------------------------------------------
 
+# run_timed <seconds> <cmd...> — run with a deadline; 124 on timeout. macOS
+# ships no `timeout`, and a TCC-blocked systemsetup never returns on its own,
+# so the remote-login toggles must not be able to hang the script. The caller
+# must prime the sudo timestamp first (`as_root true`): a backgrounded sudo
+# cannot prompt for a password.
+run_timed() {
+  local secs="$1" pid waited=0
+  shift
+  "$@" &
+  pid=$!
+  while kill -0 "$pid" 2>/dev/null; do
+    if [ "$waited" -ge "$secs" ]; then
+      pkill -P "$pid" 2>/dev/null || true
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+      return 124
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  wait "$pid"
+}
+
 as_root() {
   if [ "$(id -u)" -eq 0 ]; then
     "$@"
@@ -205,14 +232,21 @@ set_remote_login() {
     return
   fi
 
-  as_root systemsetup -setremotelogin "$want" >/dev/null || true
+  # Authorize in the foreground so the password prompt is visible and cached,
+  # then run each toggle under a deadline: systemsetup blocks indefinitely in
+  # contexts where TCC grants no Full Disk Access — observed on this Mac's
+  # first real `mac-vps off` run (2026-10-25), where it hung the script.
+  as_root true || die "sudo authorization failed"
+
+  info "remote login: setting via systemsetup"
+  run_timed 15 sudo -n systemsetup -setremotelogin "$want" >/dev/null 2>&1 || true
 
   if [ "$want" = on ] && ! remote_login_listening; then
-    info "systemsetup had no effect; trying launchctl"
-    as_root launchctl load -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
+    info "systemsetup did not take effect; trying launchctl"
+    run_timed 15 sudo -n launchctl load -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
   elif [ "$want" = off ] && remote_login_listening; then
-    info "systemsetup had no effect; trying launchctl"
-    as_root launchctl unload -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
+    info "systemsetup did not take effect; trying launchctl"
+    run_timed 15 sudo -n launchctl unload -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
   fi
 
   if [ "$want" = on ] && ! remote_login_listening; then
@@ -266,7 +300,7 @@ case "$cmd" in
     do_on
     load_state
     print_status
-    [ "$mode" = "on" ] || die "wanted VPS mode but got: ${mode_desc}"
+    [ "$mode" = "on" ] || die "wanted VPS mode but got: ${mode_desc} (check: pmset -g | grep SleepDisabled)"
     ;;
   off)
     do_off
