@@ -49,6 +49,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0038](0038-remove-merged-worktrees-in-git-cleanup.md) | Remove merged Git worktrees and Herdr workspaces in `git-cleanup` | Accepted | 2026-10-20 |
 | [0039](0039-caffeinate-the-opencode-tui.md) | Caffeinate the opencode TUI launch on macOS | Accepted | 2026-10-21 |
 | [0040](0040-create-and-open-worktrees-in-git-workspace.md) | Create and open Git worktrees with `git-workspace` | Accepted | 2026-10-23 |
+| [0041](0041-toggle-laptop-and-vps-modes-with-mac-vps.md) | Toggle laptop and VPS modes with `mac-vps` | Accepted | 2026-10-25 |
 
 
 ## Format

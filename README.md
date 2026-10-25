@@ -241,6 +241,17 @@ only when it is missing (backing the file up first). To do it by hand, add
   `git cleanup [branch]`. Based on the "Cleanup to a given branch" tip at
   <https://kameniksolutions.com/resources/git-tips-and-tricks/#cleanup-to-a-given-branch>.
 
+- `mac-vps [on|off|status]` — toggle this Mac between a normal laptop and a VPS
+  for tailnet ssh while away. `status` (the default) reports the power settings,
+  whether Remote Login is listening on `:22`, the Tailscale self entry, and the
+  authorized `ks-laptop-key` fingerprint, exiting `0` in VPS mode, `1` in laptop
+  mode, `2` when the halves disagree. `on` applies the never-sleep `pmset` block
+  and ensures Remote Login is on; `off` restores the stock snapshot (exactly
+  what `on` changed) and turns Remote Login off, refusing to run over the SSH
+  session it would sever. macOS only (`pmset`, `systemsetup`), and both toggles
+  skip `sudo` when the mode is already set
+  ([ADR-0041](docs/adr/0041-toggle-laptop-and-vps-modes-with-mac-vps.md)).
+
 ## Manual Steps (Not Automated)
 
 - Tailscale: install and join the tailnet (cask on macOS, apt repo on Linux).
@@ -300,6 +311,7 @@ git lfs version
 devcontainer --version
 claude --version
 test -x bin/git-cleanup          # repo helper script (ADR-0033)
+test -x bin/mac-vps              # laptop/VPS toggle script (ADR-0041)
 test -L ~/.config/opencode/plugins/herdr-worktree-open.js   # herdr worktree plugin (ADR-0036)
 [[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w opencode' | grep -q 'opencode: function'  # caffeinate wrapper, macOS only (ADR-0039)
 ! command -v nono                # retired by ADR-0031

@@ -16,7 +16,7 @@ and the developer tools they need. It does not own scheduled execution
 | `Brewfile` | Shared toolchain (macOS and Linuxbrew) |
 | `Brewfile.macos` | macOS-only casks |
 | `install.sh` | Bootstrap: OS detect, `brew bundle`, backup, `stow`; also seeds `~/.zshrc.local` so `bin/` is on `$PATH` ([ADR-0033](docs/adr/0033-repo-scripts-in-bin-on-path.md)) |
-| `bin/` | Repo helper scripts (e.g. `git-cleanup`, `git-workspace`); tracked, not stowed, put on `$PATH` via the `~/.zshrc.local` overlay ([ADR-0033](docs/adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0040](docs/adr/0040-create-and-open-worktrees-in-git-workspace.md)) |
+| `bin/` | Repo helper scripts (e.g. `git-cleanup`, `git-workspace`, `mac-vps`); tracked, not stowed, put on `$PATH` via the `~/.zshrc.local` overlay ([ADR-0033](docs/adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0040](docs/adr/0040-create-and-open-worktrees-in-git-workspace.md), [ADR-0041](docs/adr/0041-toggle-laptop-and-vps-modes-with-mac-vps.md)) |
 | `uninstall-nono-supacode.sh` | Transitional one-shot cleanup for machines provisioned before [ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md); delete it once every machine has run it |
 | `dotfiles/<pkg>/...` | GNU Stow packages mapped onto `$HOME` |
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
@@ -91,6 +91,7 @@ opencode --version       # 2.x (ADR-0032)
 test -x bin/git-cleanup  # repo helper script (ADR-0033)
 test -x bin/git-workspace # worktree helper script (ADR-0040)
 test -x bin/check-models   # model testing script (ADR-0037)
+test -x bin/mac-vps      # laptop/VPS toggle script (ADR-0041)
 test -L ~/.config/opencode/plugins/herdr-worktree-open.js  # stowed plugin (ADR-0036)
 test -L ~/.config/opencode/model-recommendation/tui.js     # stowed recommendation banner plugin (ADR-0037)
 test ! -L ~/.zshrc       # machine-owned; sources the tracked rc (ADR-0034)

@@ -1,0 +1,277 @@
+#!/usr/bin/env bash
+#
+# mac-vps [on|off|status]
+#
+# Toggle this Mac between a normal laptop (sleeps when idle) and a VPS (never
+# sleeps, Remote Login listening), so it can be ssh'd into over Tailscale from
+# another machine while away.
+#
+#   status (default)  report power settings and reachability; changes nothing
+#   on                 never-sleep power settings + ensure Remote Login is on
+#   off                restore stock power settings + turn Remote Login off
+#
+# `status` exits 0 in VPS mode, 1 in laptop mode, 2 when the two halves
+# disagree. `on`/`off` exit 0 when the mode was reached, and skip the sudo
+# prompt entirely when the mode is already set.
+#
+# The stock values `off` writes are this Mac's `pmset -g custom` snapshot from
+# 2026-10-25 — exactly the settings `on` changes, so there is no drift between
+# the two. Travel checklist, topology, and revert table:
+# automations/docs/remote-ssh.md (automations repo).
+#
+# macOS only: uses pmset and systemsetup.
+set -euo pipefail
+
+die() { echo "mac-vps: $*" >&2; exit 1; }
+info() { echo "==> $*"; }
+row() { printf '    %-14s %s\n' "$1" "$2"; }
+
+usage() {
+  cat <<'EOF'
+Usage: mac-vps [on|off|status]
+
+  status (default)  Report power settings and reachability; changes nothing
+  on                Never-sleep power settings + ensure Remote Login is on
+  off               Restore stock power settings + turn Remote Login off
+
+Exit status (status): 0 VPS mode, 1 laptop mode, 2 partial.
+EOF
+  exit 0
+}
+
+cmd="status"
+if [ $# -gt 0 ]; then
+  case "$1" in
+    -h|--help) usage ;;
+    on|off|status) cmd="$1"; shift ;;
+    *) die "unknown argument: $1 (expected on, off, or status)" ;;
+  esac
+fi
+[ $# -eq 0 ] || die "unexpected argument: $1"
+
+[ "$(uname -s)" = "Darwin" ] || die "macOS only (uses pmset and systemsetup)"
+
+# --- state ----------------------------------------------------------------
+
+remote_login_listening() { nc -z -w 1 127.0.0.1 22 >/dev/null 2>&1; }
+
+custom=""
+sleep_b="" sleep_ac="" standby_b="" standby_ac=""
+womp_b="" womp_ac="" ds_b="" ds_ac="" disablesleep=""
+power_state="partial" rl="off" mode="partial" rc=2 mode_desc=""
+power_src="" power_detail="" tailscale_desc="" key_desc=""
+
+# pmset_val <Battery|AC> <setting> — value from `pmset -g custom`, or empty.
+pmset_val() {
+  printf '%s\n' "$custom" | awk -v src="$1" -v key="$2" '
+    { sub(/^[ \t]+/, "") }
+    /Power:$/ { sec = $1; next }
+    sec == src && $1 == key { print $2; exit }'
+}
+
+load_state() {
+  custom="$(pmset -g custom)"
+
+  sleep_b="$(pmset_val Battery sleep)";        sleep_b="${sleep_b:-?}"
+  sleep_ac="$(pmset_val AC sleep)";            sleep_ac="${sleep_ac:-?}"
+  standby_b="$(pmset_val Battery standby)";    standby_b="${standby_b:-?}"
+  standby_ac="$(pmset_val AC standby)";        standby_ac="${standby_ac:-?}"
+  womp_b="$(pmset_val Battery womp)";          womp_b="${womp_b:-0}"
+  womp_ac="$(pmset_val AC womp)";              womp_ac="${womp_ac:-0}"
+  ds_b="$(pmset_val Battery displaysleep)";    ds_b="${ds_b:-?}"
+  ds_ac="$(pmset_val AC displaysleep)";        ds_ac="${ds_ac:-?}"
+
+  # disablesleep is global; it may be absent from `pmset -g custom` when unset.
+  disablesleep="$(pmset_val Battery disablesleep)"
+  if [ -z "$disablesleep" ]; then disablesleep="$(pmset_val AC disablesleep)"; fi
+  if [ -z "$disablesleep" ]; then
+    disablesleep="$(pmset -g 2>/dev/null | awk '$1 == "disablesleep" { print $2; exit }')"
+  fi
+  disablesleep="${disablesleep:-0}"
+
+  if [ "$sleep_b" = 0 ] && [ "$sleep_ac" = 0 ] && [ "$disablesleep" = 1 ]; then
+    power_state="on"
+  elif [ "$sleep_b" = 1 ] && [ "$sleep_ac" = 1 ] && [ "$disablesleep" = 0 ]; then
+    power_state="off"
+  else
+    power_state="partial"
+  fi
+
+  if remote_login_listening; then rl="on"; else rl="off"; fi
+
+  if [ "$power_state" = "on" ] && [ "$rl" = "on" ]; then
+    mode="on"; rc=0
+    mode_desc="VPS mode — never sleeps, Remote Login on"
+  elif [ "$power_state" = "off" ] && [ "$rl" = "off" ]; then
+    mode="off"; rc=1
+    mode_desc="laptop mode — sleeps when idle, Remote Login off"
+  else
+    mode="partial"; rc=2
+    case "$power_state" in
+      on)  mode_desc="partial — never sleeps, but Remote Login is off" ;;
+      off) mode_desc="partial — sleeps when idle, but Remote Login is on" ;;
+      *)   mode_desc="partial — mixed power settings (sleep ${sleep_b}/${sleep_ac}, disablesleep ${disablesleep})" ;;
+    esac
+  fi
+
+  local_batt="$(pmset -g batt)"
+  power_src="$(printf '%s\n' "$local_batt" | head -1 | sed -n "s/.*from '\(.*\)'.*/\1/p")"
+  power_src="${power_src:-unknown}"
+  power_detail="$(printf '%s\n' "$local_batt" | awk -F'\t' 'NR == 2 { print $2; exit }')"
+  if [ -n "$power_detail" ]; then
+    power_detail="$(printf '%s\n' "$power_detail" | cut -d';' -f1,2 | tr ';' ' ')"
+  fi
+
+  tailscale_desc="not installed"
+  if command -v tailscale >/dev/null 2>&1; then
+    self_line="$(tailscale status 2>/dev/null | head -1 || true)"
+    if [ -n "$self_line" ]; then
+      tailscale_desc="$(printf '%s\n' "$self_line" | awk '{ print $1 "  " $2 }')"
+    else
+      tailscale_desc="not signed in / daemon not running"
+    fi
+  fi
+
+  key_desc="missing (${HOME}/.ssh/authorized_keys)"
+  if [ -f "${HOME}/.ssh/authorized_keys" ]; then
+    key_line="$(ssh-keygen -l -f "${HOME}/.ssh/authorized_keys" 2>/dev/null | grep 'ks-laptop-key' || true)"
+    if [ -n "$key_line" ]; then
+      key_desc="$key_line"
+    else
+      key_desc="ks-laptop-key not in ${HOME}/.ssh/authorized_keys"
+    fi
+  fi
+}
+
+print_status() {
+  info "mode: ${mode_desc}"
+  if [ -n "$power_detail" ]; then
+    row "power" "${power_src}  ${power_detail}"
+  else
+    row "power" "$power_src"
+  fi
+  row "sleep" "${sleep_b} (battery) / ${sleep_ac} (AC)"
+  row "disablesleep" "$disablesleep"
+  row "standby" "${standby_b} (battery) / ${standby_ac} (AC)"
+  row "womp" "${womp_b} (battery) / ${womp_ac} (AC)"
+  row "displaysleep" "${ds_b} (battery) / ${ds_ac} (AC)"
+  if [ "$rl" = "on" ]; then
+    row "remote login" "on (listening on :22)"
+  else
+    row "remote login" "off (nothing listening on :22)"
+  fi
+  row "tailscale" "$tailscale_desc"
+  row "ssh key" "$key_desc"
+}
+
+# --- actions -------------------------------------------------------------
+
+as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  else
+    command -v sudo >/dev/null 2>&1 || die "root required and sudo is unavailable"
+    sudo "$@"
+  fi
+}
+
+apply_power_on() {
+  as_root pmset -a sleep 0 disablesleep 1 || die "pmset (never-sleep) failed"
+  as_root pmset -a standby 0 || die "pmset (standby) failed"
+  as_root pmset -a womp 1 tcpkeepalive 1 || die "pmset (wake-for-network) failed"
+  as_root pmset -a displaysleep 10 || die "pmset (displaysleep) failed"
+  info "power: never-sleep settings applied"
+}
+
+apply_power_off() {
+  # Stock values for this Mac, `pmset -g custom` snapshot 2026-10-25: exactly
+  # the settings apply_power_on writes, plus their AC/battery defaults.
+  as_root pmset -a sleep 1 disablesleep 0 standby 1 || die "pmset (stock sleep) failed"
+  as_root pmset -b womp 0 displaysleep 2 || die "pmset (battery stock) failed"
+  as_root pmset -c womp 1 displaysleep 10 || die "pmset (AC stock) failed"
+  info "power: stock (sleeping) settings restored"
+}
+
+# set_remote_login <on|off> — verify against the port, not the command's word:
+# systemsetup can be blocked by TCC in contexts without Full Disk Access.
+set_remote_login() {
+  want="$1"
+  if [ "$want" = on ] && remote_login_listening; then
+    info "remote login: already on"
+    return
+  fi
+  if [ "$want" = off ] && ! remote_login_listening; then
+    info "remote login: already off"
+    return
+  fi
+
+  as_root systemsetup -setremotelogin "$want" >/dev/null || true
+
+  if [ "$want" = on ] && ! remote_login_listening; then
+    info "systemsetup had no effect; trying launchctl"
+    as_root launchctl load -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
+  elif [ "$want" = off ] && remote_login_listening; then
+    info "systemsetup had no effect; trying launchctl"
+    as_root launchctl unload -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
+  fi
+
+  if [ "$want" = on ] && ! remote_login_listening; then
+    die "could not enable Remote Login; turn it on in System Settings → General → Sharing → Remote Login"
+  fi
+  if [ "$want" = off ] && remote_login_listening; then
+    die "could not disable Remote Login; turn it off in System Settings → General → Sharing → Remote Login"
+  fi
+  info "remote login: $want"
+}
+
+do_on() {
+  if [ "$power_state" = "on" ]; then
+    info "power: already in VPS mode"
+  else
+    if [ "$power_src" = "Battery Power" ]; then
+      info "warning: on battery (${power_detail:-no reading}) — plug in, an awake Mac drains"
+    fi
+    apply_power_on
+  fi
+  set_remote_login on
+}
+
+do_off() {
+  if [ "$rl" = "on" ] && [ -n "${SSH_CONNECTION:-}" ]; then
+    die "refusing to disable Remote Login over SSH — it would sever this session; run 'mac-vps off' at the console"
+  fi
+  if [ "$power_state" = "off" ]; then
+    info "power: already in laptop mode"
+  else
+    apply_power_off
+  fi
+  set_remote_login off
+}
+
+# --- main -----------------------------------------------------------------
+
+load_state
+
+case "$cmd" in
+  status)
+    print_status
+    exit "$rc"
+    ;;
+  on)
+    if [ "$mode" = "on" ]; then
+      info "already in VPS mode"
+      print_status
+      exit 0
+    fi
+    do_on
+    load_state
+    print_status
+    [ "$mode" = "on" ] || die "wanted VPS mode but got: ${mode_desc}"
+    ;;
+  off)
+    do_off
+    load_state
+    print_status
+    [ "$mode" = "off" ] || die "wanted laptop mode but got: ${mode_desc}"
+    ;;
+esac
