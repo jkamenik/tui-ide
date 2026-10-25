@@ -67,7 +67,7 @@ flowchart TB
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
 | obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled. Optional: loaded only when the local overlay names a workspace that exists on disk |
 | mini.map | Minimap | Floating buffer overview on the right, `<leader>vm`; search and diagnostic highlights |
-| `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, `git-workspace`, `check-models`, `mac-vps`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0037](adr/0037-check-models-tool-and-skill.md), [ADR-0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md), [ADR-0040](adr/0040-create-and-open-worktrees-in-git-workspace.md), [ADR-0041](adr/0041-toggle-laptop-and-vps-modes-with-mac-vps.md)) |
+| `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, `git-workspace`, `check-models`, `mac-vps`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0037](adr/0037-check-models-tool-and-skill.md), [ADR-0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md), [ADR-0040](adr/0040-create-and-open-worktrees-in-git-workspace.md), [ADR-0042](adr/0042-check-remote-login-in-mac-vps.md)) |
 
 ## Cross-Machine Model
 
@@ -104,9 +104,10 @@ flowchart TB
   the remote, prunes clean merged/gone worktrees and their Herdr workspaces, and
   deletes stale local branches ([ADR-0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md)).
   `mac-vps` toggles this Mac between laptop and VPS modes — never-sleep power
-  settings plus Remote Login — so it stays reachable over Tailscale while away,
-  and `mac-vps status` reports the reachability picture without privileges
-  ([ADR-0041](adr/0041-toggle-laptop-and-vps-modes-with-mac-vps.md)).
+  settings, with Remote Login checked but never toggled, and the manual
+  System Settings path reported when it is off — so it stays reachable over
+  Tailscale while away, and `mac-vps status` reports the reachability picture
+  without privileges ([ADR-0042](adr/0042-check-remote-login-in-mac-vps.md)).
   `install.sh` puts it on `$PATH` by seeding a generated `~/.zshrc.local`, which
   the tracked shell config sources, so the machine-specific repo path stays
   untracked. `~/bin` is left for machine-local scripts

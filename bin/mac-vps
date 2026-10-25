@@ -3,23 +3,30 @@
 # mac-vps [on|off|status]
 #
 # Toggle this Mac between a normal laptop (sleeps when idle) and a VPS (never
-# sleeps, Remote Login listening), so it can be ssh'd into over Tailscale from
-# another machine while away.
+# sleeps), so it can be ssh'd into over Tailscale from another machine while
+# away.
 #
 #   status (default)  report power settings and reachability; changes nothing
-#   on                 never-sleep power settings + ensure Remote Login is on
-#   off                restore stock power settings + turn Remote Login off
+#   on                 never-sleep power settings, then check Remote Login
+#   off                restore stock power settings
 #
-# `status` exits 0 in VPS mode, 1 in laptop mode, 2 when the two halves
-# disagree. `on`/`off` exit 0 when the mode was reached, and skip the sudo
-# prompt entirely when the mode is already set.
+# Remote Login is only ever *checked*, never toggled: sshd is not exposed to
+# the internet (no port forwarding), and turning it off every trip buys
+# nothing while adding a step each time. The script's whole privileged
+# interface is therefore pmset. If the Mac would be unreachable, status and
+# `on` print the exact System Settings path to fix it by hand.
+#
+# Exit status: `status` → 0 VPS mode (awake and listening), 1 laptop mode,
+# 2 partial (mixed power settings, or awake with Remote Login off). `on` → 0
+# when reachable, 2 when Remote Login still needs the manual step, 1 on
+# failure. `off` → 0 when back to stock.
 #
 # The stock values `off` writes are this Mac's `pmset -g custom` snapshot from
 # 2026-10-25 — exactly the settings `on` changes, so there is no drift between
 # the two. Travel checklist, topology, and revert table:
 # automations/docs/remote-ssh.md (automations repo).
 #
-# macOS only: uses pmset and systemsetup.
+# macOS only: uses pmset.
 set -euo pipefail
 
 die() { echo "mac-vps: $*" >&2; exit 1; }
@@ -31,10 +38,12 @@ usage() {
 Usage: mac-vps [on|off|status]
 
   status (default)  Report power settings and reachability; changes nothing
-  on                Never-sleep power settings + ensure Remote Login is on
-  off               Restore stock power settings + turn Remote Login off
+  on                Never-sleep power settings; check Remote Login
+  off               Restore stock power settings (Remote Login untouched)
 
-Exit status (status): 0 VPS mode, 1 laptop mode, 2 partial.
+Exit status: status → 0 VPS / 1 laptop / 2 partial
+             on     → 0 reachable, 2 awaiting the manual Remote Login step, 1 failed
+             off    → 0 when back to stock
 EOF
   exit 0
 }
@@ -49,7 +58,7 @@ if [ $# -gt 0 ]; then
 fi
 [ $# -eq 0 ] || die "unexpected argument: $1"
 
-[ "$(uname -s)" = "Darwin" ] || die "macOS only (uses pmset and systemsetup)"
+[ "$(uname -s)" = "Darwin" ] || die "macOS only (uses pmset)"
 
 # --- state ----------------------------------------------------------------
 
@@ -103,19 +112,23 @@ load_state() {
 
   if remote_login_listening; then rl="on"; else rl="off"; fi
 
-  if [ "$power_state" = "on" ] && [ "$rl" = "on" ]; then
-    mode="on"; rc=0
-    mode_desc="VPS mode — never sleeps, Remote Login on"
-  elif [ "$power_state" = "off" ] && [ "$rl" = "off" ]; then
+  # Mode follows reachability, not just the power block: an awake Mac with
+  # nothing on :22 is worse than a sleeping one, and laptop mode is fine with
+  # Remote Login on or off (the script never changes it either way).
+  if [ "$power_state" = "on" ]; then
+    if [ "$rl" = "on" ]; then
+      mode="on"; rc=0
+      mode_desc="VPS mode — never sleeps, Remote Login on"
+    else
+      mode="partial"; rc=2
+      mode_desc="partial — never sleeps, but Remote Login is off"
+    fi
+  elif [ "$power_state" = "off" ]; then
     mode="off"; rc=1
-    mode_desc="laptop mode — sleeps when idle, Remote Login off"
+    mode_desc="laptop mode — sleeps when idle, Remote Login ${rl}"
   else
     mode="partial"; rc=2
-    case "$power_state" in
-      on)  mode_desc="partial — never sleeps, but Remote Login is off" ;;
-      off) mode_desc="partial — sleeps when idle, but Remote Login is on" ;;
-      *)   mode_desc="partial — mixed power settings (sleep ${sleep_b}/${sleep_ac}, disablesleep ${disablesleep})" ;;
-    esac
+    mode_desc="partial — mixed power settings (sleep ${sleep_b}/${sleep_ac}, disablesleep ${disablesleep})"
   fi
 
   local_batt="$(pmset -g batt)"
@@ -166,32 +179,12 @@ print_status() {
   fi
   row "tailscale" "$tailscale_desc"
   row "ssh key" "$key_desc"
+  if [ "$power_state" = "on" ] && [ "$rl" != "on" ]; then
+    info "unreachable — enable Remote Login by hand: System Settings → General → Sharing → Remote Login"
+  fi
 }
 
 # --- actions -------------------------------------------------------------
-
-# run_timed <seconds> <cmd...> — run with a deadline; 124 on timeout. macOS
-# ships no `timeout`, and a TCC-blocked systemsetup never returns on its own,
-# so the remote-login toggles must not be able to hang the script. The caller
-# must prime the sudo timestamp first (`as_root true`): a backgrounded sudo
-# cannot prompt for a password.
-run_timed() {
-  local secs="$1" pid waited=0
-  shift
-  "$@" &
-  pid=$!
-  while kill -0 "$pid" 2>/dev/null; do
-    if [ "$waited" -ge "$secs" ]; then
-      pkill -P "$pid" 2>/dev/null || true
-      kill "$pid" 2>/dev/null || true
-      wait "$pid" 2>/dev/null || true
-      return 124
-    fi
-    sleep 1
-    waited=$((waited + 1))
-  done
-  wait "$pid"
-}
 
 as_root() {
   if [ "$(id -u)" -eq 0 ]; then
@@ -219,45 +212,6 @@ apply_power_off() {
   info "power: stock (sleeping) settings restored"
 }
 
-# set_remote_login <on|off> — verify against the port, not the command's word:
-# systemsetup can be blocked by TCC in contexts without Full Disk Access.
-set_remote_login() {
-  want="$1"
-  if [ "$want" = on ] && remote_login_listening; then
-    info "remote login: already on"
-    return
-  fi
-  if [ "$want" = off ] && ! remote_login_listening; then
-    info "remote login: already off"
-    return
-  fi
-
-  # Authorize in the foreground so the password prompt is visible and cached,
-  # then run each toggle under a deadline: systemsetup blocks indefinitely in
-  # contexts where TCC grants no Full Disk Access — observed on this Mac's
-  # first real `mac-vps off` run (2026-10-25), where it hung the script.
-  as_root true || die "sudo authorization failed"
-
-  info "remote login: setting via systemsetup"
-  run_timed 15 sudo -n systemsetup -setremotelogin "$want" >/dev/null 2>&1 || true
-
-  if [ "$want" = on ] && ! remote_login_listening; then
-    info "systemsetup did not take effect; trying launchctl"
-    run_timed 15 sudo -n launchctl load -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
-  elif [ "$want" = off ] && remote_login_listening; then
-    info "systemsetup did not take effect; trying launchctl"
-    run_timed 15 sudo -n launchctl unload -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
-  fi
-
-  if [ "$want" = on ] && ! remote_login_listening; then
-    die "could not enable Remote Login; turn it on in System Settings → General → Sharing → Remote Login"
-  fi
-  if [ "$want" = off ] && remote_login_listening; then
-    die "could not disable Remote Login; turn it off in System Settings → General → Sharing → Remote Login"
-  fi
-  info "remote login: $want"
-}
-
 do_on() {
   if [ "$power_state" = "on" ]; then
     info "power: already in VPS mode"
@@ -267,19 +221,16 @@ do_on() {
     fi
     apply_power_on
   fi
-  set_remote_login on
 }
 
 do_off() {
-  if [ "$rl" = "on" ] && [ -n "${SSH_CONNECTION:-}" ]; then
-    die "refusing to disable Remote Login over SSH — it would sever this session; run 'mac-vps off' at the console"
-  fi
   if [ "$power_state" = "off" ]; then
     info "power: already in laptop mode"
   else
     apply_power_off
   fi
-  set_remote_login off
+  # Remote Login is deliberately left alone: it is not exposed to the
+  # internet, and turning it off only adds a manual step to the next trip.
 }
 
 # --- main -----------------------------------------------------------------
@@ -300,7 +251,12 @@ case "$cmd" in
     do_on
     load_state
     print_status
-    [ "$mode" = "on" ] || die "wanted VPS mode but got: ${mode_desc} (check: pmset -g | grep SleepDisabled)"
+    if [ "$power_state" != "on" ]; then
+      die "wanted VPS mode but got: ${mode_desc} (check: pmset -g | grep SleepDisabled)"
+    fi
+    # Power is set; exit 2 while the manual Remote Login step (stated above)
+    # is the only thing between this Mac and being reachable.
+    [ "$rl" = "on" ] || exit 2
     ;;
   off)
     do_off
