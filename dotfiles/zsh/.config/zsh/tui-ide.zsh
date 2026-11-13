@@ -133,9 +133,8 @@ alias vi=nvim
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# `claude` is the plain binary on $PATH. The nono wrappers both agents used to
-# run under are retired (ADR-0031), so the agent is the pane's foreground
-# process and herdr identifies it without a HERDR_AGENT hint.
+# `claude` and `opencode` run as plain binaries on $PATH without nono wrappers
+# (ADR-0031), so herdr identifies them as the pane's foreground process.
 
 # macOS: a long agent turn dies to idle sleep, so launch the opencode TUI
 # under `caffeinate -i`, which holds an idle-sleep assertion for exactly as
@@ -162,6 +161,17 @@ if [[ "$OSTYPE" == darwin* ]] && [[ -n "${commands[caffeinate]:-}" ]] \
           "$bin" "$@"
         fi ;;
     esac
+  }
+fi
+
+# macOS: launch claude under `caffeinate -i` so long agent turns do not die
+# to idle system sleep. The assertion releases immediately when claude exits,
+# and caffeinate execs in place so the foreground process stays `claude` for herdr.
+# See ADR-0043.
+if [[ "$OSTYPE" == darwin* ]] && [[ -n "${commands[caffeinate]:-}" ]] \
+   && [[ -n "${commands[claude]:-}" ]]; then
+  claude() {
+    caffeinate -i "${commands[claude]}" "$@"
   }
 fi
 

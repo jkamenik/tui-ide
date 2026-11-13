@@ -55,7 +55,7 @@ flowchart TB
 | herdr | Multiplexer | Server-side sessions; UI theme follows the terminal palette |
 | Neovim | Editor | Human editing surface; agent lives in the opencode TUI. `$EDITOR`, and `vi` by alias |
 | devcontainer | Dev Containers CLI | Installed for projects that want their build in a container. No repo wiring yet |
-| Claude Code | Agent CLI | Alternate agent surface; plain binary on `$PATH` since ADR-0031; user settings merged from a tracked template, hooks left local |
+| Claude Code | Agent CLI | Alternate agent surface; plain binary on `$PATH` since ADR-0031; user settings merged from a tracked template, hooks left local; herdr integration ensured by `install.sh` and launched under `caffeinate -i` on macOS ([ADR-0043](adr/0043-ensure-herdr-integration-and-caffeinate-claude.md)) |
 | opencode | Agent CLI | Primary agent surface, plain binary on `$PATH` since ADR-0031, its TUI launch wrapped in `caffeinate -i` on macOS ([ADR-0039](adr/0039-caffeinate-the-opencode-tui.md)); on the 2.x line from `anomalyco/tap` ([ADR-0032](adr/0032-track-the-opencode-2.x-line.md)); a custom provider must name its runtime package on 2.x |
 | opencode plugins | herdr worktree integration | The tracked `herdr-worktree-open.js` is stowed into `~/.config/opencode/plugins/` and opens opencode-created worktrees in herdr's sidebar ([ADR-0036](adr/0036-stow-the-herdr-worktree-open-plugin.md)) |
 | mosh | Transport | Interactive sessions over the tailnet; OpenSSH for files |
@@ -120,11 +120,13 @@ flowchart TB
   own sandbox off.
 - **Agents:** `opencode` and `claude` are plain binaries on `$PATH`. Each agent
   is the pane's foreground process, which is what herdr reads to identify it in
-  the agents view, so no wrapper hint is needed. On macOS a tracked zsh function
-  launches the opencode TUI under `caffeinate -i`, keeping the Mac awake while a
-  TUI is open; `caffeinate` execs the binary in place, so the foreground process
-  stays `opencode`, and server subcommands run unwrapped
-  ([ADR-0039](adr/0039-caffeinate-the-opencode-tui.md)).
+  the agents view, so no wrapper hint is needed. On macOS tracked zsh functions
+  launch the opencode TUI and claude under `caffeinate -i`, keeping the Mac awake
+  while an agent runs; `caffeinate` execs the binary in place, so the foreground
+  process keeps its name, and server subcommands run unwrapped
+  ([ADR-0039](adr/0039-caffeinate-the-opencode-tui.md), [ADR-0043](adr/0043-ensure-herdr-integration-and-caffeinate-claude.md)).
+  `install.sh` ensures herdr's lifecycle integrations for both agents are installed
+  ([ADR-0043](adr/0043-ensure-herdr-integration-and-caffeinate-claude.md)).
   The nono sandbox, its profile
   derivation, its pack pin, and its `HERDR_AGENT` label are all retired
   ([ADR-0031](adr/0031-retire-the-nono-sandbox.md));
@@ -234,3 +236,6 @@ record that replaced them.
 | [0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md) | Remove merged Git worktrees and Herdr workspaces in `git-cleanup` | Accepted |
 | [0039](adr/0039-caffeinate-the-opencode-tui.md) | Caffeinate the opencode TUI launch on macOS | Accepted |
 | [0040](adr/0040-create-and-open-worktrees-in-git-workspace.md) | Create and open Git worktrees with `git-workspace` | Accepted |
+| [0041](adr/0041-toggle-laptop-and-vps-modes-with-mac-vps.md) | Toggle laptop and VPS modes with `mac-vps` | Superseded by [0042](adr/0042-check-remote-login-in-mac-vps.md) |
+| [0042](adr/0042-check-remote-login-in-mac-vps.md) | Check Remote Login in `mac-vps` instead of toggling it | Accepted |
+| [0043](adr/0043-ensure-herdr-integration-and-caffeinate-claude.md) | Ensure Herdr integration and caffeinate Claude Code on macOS | Accepted |

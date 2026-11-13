@@ -61,10 +61,10 @@ running `brew bundle`.
 ## Agents
 
 `opencode` and `claude` are the plain binaries the toolchain installs. On
-macOS a tracked zsh function launches the opencode TUI under `caffeinate -i`
-so the Mac stays awake while a TUI is open; the assertion releases the moment
-the TUI exits, and server subcommands run unwrapped
-([ADR-0039](docs/adr/0039-caffeinate-the-opencode-tui.md)). The nono sandbox
+macOS tracked zsh functions launch the opencode TUI and claude under `caffeinate -i`
+so the Mac stays awake while an agent is running; the assertion releases the moment
+the agent exits, and server subcommands run unwrapped
+([ADR-0039](docs/adr/0039-caffeinate-the-opencode-tui.md), [ADR-0043](docs/adr/0043-ensure-herdr-integration-and-caffeinate-claude.md)). The nono sandbox
 they ran under, its registry packs, the tracked
 `tui-ide-agent` profile, and the `-yolo` variants are retired
 ([ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md)). Because the agent is the
@@ -315,6 +315,7 @@ test -x bin/git-cleanup          # repo helper script (ADR-0033)
 test -x bin/mac-vps              # laptop/VPS toggle script (ADR-0042)
 test -L ~/.config/opencode/plugins/herdr-worktree-open.js   # herdr worktree plugin (ADR-0036)
 [[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w opencode' | grep -q 'opencode: function'  # caffeinate wrapper, macOS only (ADR-0039)
+[[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w claude' | grep -q 'claude: function'      # caffeinate wrapper, macOS only (ADR-0043)
 ! command -v nono                # retired by ADR-0031
 ! command -v supacode             # removed; the CLI link may need 'sudo rm /usr/local/bin/supacode'
 ```

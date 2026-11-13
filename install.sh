@@ -351,6 +351,20 @@ else
   echo "==> opencode is not installed; skipping the client config. Re-run install.sh after installing it."
 fi
 
+# Agent integrations for herdr. herdr ships built-in hooks and plugins for
+# supported agents (claude, opencode). Installing them registers lifecycle
+# hooks so herdr tracks agent state and session IDs in its sidebar (ADR-0043).
+if have herdr; then
+  if have claude; then
+    herdr integration install claude >/dev/null 2>&1 || true
+    echo "==> Ensured herdr integration for claude"
+  fi
+  if have opencode; then
+    herdr integration install opencode >/dev/null 2>&1 || true
+    echo "==> Ensured herdr integration for opencode"
+  fi
+fi
+
 if [ "$os" = "Darwin" ]; then
   # Register terminal-notifier's helper app with Notification Center.
   # macOS authorizes notifications per app identity; opening the bundled app
@@ -402,6 +416,9 @@ echo "==> Done. Backups (if any) in $BACKUP_DIR"
 next=()
 [ -f "$HOME/.gitconfig.local" ] ||
   next+=("cp dotfiles/git/.gitconfig.local.example ~/.gitconfig.local")
+if have claude && ! claude auth status >/dev/null 2>&1; then
+  next+=("claude auth login   # sign into Claude Code with your Anthropic/Claude account")
+fi
 if [ ${#next[@]} -gt 0 ]; then
   echo "    Next:"
   printf '      %s\n' "${next[@]}"
