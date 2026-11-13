@@ -183,7 +183,9 @@ Then finish the iTerm2 setup:
 (it skips this while iTerm2 is running, so quit iTerm2 and re-run if it says
 so). Restart iTerm2 afterward; the "Warm Burnout Dark" preset appears under
 Settings > Profiles > Colors > Color Presets, and herdr (`theme = "terminal"`)
-and opencode (`theme = "system"`) follow the same palette.
+follows the same palette. opencode (`warm-burnout`) and Claude Code
+(`custom:warm-burnout-dark`, seeded into `~/.claude/themes/`) use tracked
+copies of it instead.
 
 To do it by hand instead:
 

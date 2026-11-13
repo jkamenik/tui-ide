@@ -20,7 +20,7 @@ and the developer tools they need. It does not own scheduled execution
 | `uninstall-nono-supacode.sh` | Transitional one-shot cleanup for machines provisioned before [ADR-0031](docs/adr/0031-retire-the-nono-sandbox.md); delete it once every machine has run it |
 | `dotfiles/<pkg>/...` | GNU Stow packages mapped onto `$HOME` |
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
-| `dotfiles/claude/...` | Claude Code settings template; tracked but not stowed, `install.sh` merges it into `~/.claude/settings.json` ([ADR-0019](docs/adr/0019-merge-claude-user-settings.md)) |
+| `dotfiles/claude/...` | Claude Code settings template, merged into `~/.claude/settings.json` ([ADR-0019](docs/adr/0019-merge-claude-user-settings.md)), plus the Warm Burnout `themes/*.json`, copied when missing ([ADR-0044](docs/adr/0044-seed-a-warm-burnout-claude-code-theme.md)); tracked but not stowed |
 | `dotfiles/opencode/...` | opencode client config templates (`tui.jsonc.example` for 1.x, `cli.json.example` for 2.x), server config template (`opencode.jsonc.example`), plus the tracked `themes/*.json`; tracked but not stowed, `install.sh` copies them when missing ([ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)) |
 | `dotfiles/opencode-agents/...` | opencode global `AGENTS.md`; portable, so stowed as a link rather than seeded from an example ([ADR-0030](docs/adr/0030-stow-the-global-opencode-agents-md.md)) |
 | `docs/architecture.md` | System architecture |

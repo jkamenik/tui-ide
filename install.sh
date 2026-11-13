@@ -248,6 +248,23 @@ else
   echo "==> jq is missing; leaving ~/.claude/settings.json untouched" >&2
 fi
 
+# Claude Code loads custom themes by filename from ~/.claude/themes/, and the
+# settings template above selects this one as "custom:warm-burnout-dark". /theme
+# saves edits by atomically replacing the file, which would turn a stow link into
+# a real file, so the theme is seeded copy-once like the opencode theme below
+# (ADR-0044).
+claude_theme_src="$REPO_DIR/dotfiles/claude/.claude/themes/warm-burnout-dark.json"
+claude_theme="$HOME/.claude/themes/warm-burnout-dark.json"
+if [ ! -f "$claude_theme" ]; then
+  mkdir -p "$HOME/.claude/themes"
+  cp "$claude_theme_src" "$claude_theme"
+  echo "==> Installed the Claude Code theme warm-burnout-dark from dotfiles/claude"
+else
+  echo "==> ~/.claude/themes/warm-burnout-dark.json exists; left alone (copy-once)"
+  echo "    If the tracked theme changed since it was seeded, merge by hand:"
+  echo "      diff -u '$claude_theme_src' '$claude_theme'"
+fi
+
 # The opencode client config is machine-local: it carries the herdr session
 # plugin path, so convention 4 forbids tracking it and a stow link would put
 # that path in the repo (ADR-0026). The example is tracked and the real file is

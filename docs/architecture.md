@@ -146,6 +146,9 @@ flowchart TB
   `install.sh` seeds the one the installed version reads from a tracked example
   rather than stowing it
   ([ADR-0026](adr/0026-seed-the-client-config-the-installed-version-reads.md)).
+  Claude Code likewise selects a tracked custom theme,
+  `custom:warm-burnout-dark`, seeded copy-once into `~/.claude/themes/`
+  ([ADR-0044](adr/0044-seed-a-warm-burnout-claude-code-theme.md)).
 - **Global agent rules:** opencode reads `~/.config/opencode/AGENTS.md` for every
   session. It is portable — no machine-local values — so it is tracked in its own
   package, `dotfiles/opencode-agents/`, and stowed as a link rather than seeded

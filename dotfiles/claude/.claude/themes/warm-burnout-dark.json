@@ -1,0 +1,62 @@
+{
+  "name": "Warm Burnout Dark",
+  "base": "dark",
+  "overrides": {
+    "text": "#bfbdb6",
+    "inverseText": "#1a1510",
+    "inactive": "#8a8070",
+    "inactiveShimmer": "#b4a89c",
+    "subtle": "#4a443c",
+    "promptBorder": "#6a6258",
+    "promptBorderShimmer": "#8a8070",
+
+    "claude": "#ff8f40",
+    "claudeShimmer": "#ffb080",
+    "clawd_body": "#ff8f40",
+    "clawd_background": "#1a1510",
+    "briefLabelClaude": "#ff8f40",
+    "fastMode": "#f29668",
+    "fastModeShimmer": "#f7b593",
+    "chromeYellow": "#ffb454",
+
+    "claudeBlue_FOR_SYSTEM_SPINNER": "#90aec0",
+    "claudeBlueShimmer_FOR_SYSTEM_SPINNER": "#b4cad8",
+    "permission": "#90aec0",
+    "permissionShimmer": "#b4cad8",
+    "suggestion": "#90aec0",
+    "remember": "#90aec0",
+    "ide": "#90aec0",
+    "professionalBlue": "#90aec0",
+    "briefLabelYou": "#90aec0",
+    "rate_limit_fill": "#90aec0",
+    "rate_limit_empty": "#3a3630",
+
+    "planMode": "#93e2c8",
+    "background": "#93e2c8",
+    "autoAccept": "#d4a8b8",
+    "autoAcceptShimmer": "#e6c8d2",
+    "skill": "#d4a8b8",
+    "merged": "#d4a8b8",
+    "effortUltra": "#d4a8b8",
+    "bashBorder": "#f29668",
+
+    "success": "#b4bc78",
+    "error": "#f49090",
+    "warning": "#e6c08a",
+    "warningShimmer": "#f2d8b0",
+
+    "diffAdded": "#2e3a1c",
+    "diffRemoved": "#4a2420",
+    "diffAddedDimmed": "#242918",
+    "diffRemovedDimmed": "#341f1c",
+    "diffAddedWord": "#4a5c24",
+    "diffRemovedWord": "#6e3028",
+
+    "userMessageBackground": "#24201a",
+    "userMessageBackgroundHover": "#2a251e",
+    "composerSidebarBackground": "#14120f",
+    "selectionBg": "#33393a",
+    "bashMessageBackgroundColor": "#2a201c",
+    "memoryBackgroundColor": "#1f2426"
+  }
+}

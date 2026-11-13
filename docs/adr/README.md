@@ -52,6 +52,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0041](0041-toggle-laptop-and-vps-modes-with-mac-vps.md) | Toggle laptop and VPS modes with `mac-vps` | Superseded by [0042](0042-check-remote-login-in-mac-vps.md) | 2026-10-25 |
 | [0042](0042-check-remote-login-in-mac-vps.md) | Check Remote Login in `mac-vps` instead of toggling it | Accepted | 2026-10-25 |
 | [0043](0043-ensure-herdr-integration-and-caffeinate-claude.md) | Ensure Herdr integration and caffeinate Claude Code on macOS | Accepted | 2026-11-13 |
+| [0044](0044-seed-a-warm-burnout-claude-code-theme.md) | Seed a Warm Burnout custom theme for Claude Code | Accepted | 2026-11-13 |
 
 
 ## Format
