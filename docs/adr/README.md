@@ -53,6 +53,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0042](0042-check-remote-login-in-mac-vps.md) | Check Remote Login in `mac-vps` instead of toggling it | Accepted | 2026-10-25 |
 | [0043](0043-ensure-herdr-integration-and-caffeinate-claude.md) | Ensure Herdr integration and caffeinate Claude Code on macOS | Accepted | 2026-11-13 |
 | [0044](0044-seed-a-warm-burnout-claude-code-theme.md) | Seed a Warm Burnout custom theme for Claude Code | Accepted | 2026-11-13 |
+| [0045](0045-stow-a-claude-code-status-line.md) | Stow a Claude Code status line for model, context, and usage limits | Accepted | 2026-11-13 |
 
 
 ## Format

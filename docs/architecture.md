@@ -149,6 +149,10 @@ flowchart TB
   Claude Code likewise selects a tracked custom theme,
   `custom:warm-burnout-dark`, seeded copy-once into `~/.claude/themes/`
   ([ADR-0044](adr/0044-seed-a-warm-burnout-claude-code-theme.md)).
+- **Claude Code status line:** the stowed `~/.claude/statusline.sh` shows the
+  model and effort, context use, and the claude.ai 5-hour and 7-day usage
+  limits; the settings template points `statusLine` at it
+  ([ADR-0045](adr/0045-stow-a-claude-code-status-line.md)).
 - **Global agent rules:** opencode reads `~/.config/opencode/AGENTS.md` for every
   session. It is portable — no machine-local values — so it is tracked in its own
   package, `dotfiles/opencode-agents/`, and stowed as a link rather than seeded

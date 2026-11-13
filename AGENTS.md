@@ -22,6 +22,7 @@ and the developer tools they need. It does not own scheduled execution
 | `dotfiles/iterm2/...` | iTerm2 plist; tracked but not stowed, iTerm2 is pointed at the directory directly (macOS) |
 | `dotfiles/claude/...` | Claude Code settings template, merged into `~/.claude/settings.json` ([ADR-0019](docs/adr/0019-merge-claude-user-settings.md)), plus the Warm Burnout `themes/*.json`, copied when missing ([ADR-0044](docs/adr/0044-seed-a-warm-burnout-claude-code-theme.md)); tracked but not stowed |
 | `dotfiles/opencode/...` | opencode client config templates (`tui.jsonc.example` for 1.x, `cli.json.example` for 2.x), server config template (`opencode.jsonc.example`), plus the tracked `themes/*.json`; tracked but not stowed, `install.sh` copies them when missing ([ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)) |
+| `dotfiles/claude-statusline/...` | Claude Code status line script; portable, so stowed as a link to `~/.claude/statusline.sh` ([ADR-0045](docs/adr/0045-stow-a-claude-code-status-line.md)) |
 | `dotfiles/opencode-agents/...` | opencode global `AGENTS.md`; portable, so stowed as a link rather than seeded from an example ([ADR-0030](docs/adr/0030-stow-the-global-opencode-agents-md.md)) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
@@ -94,6 +95,7 @@ test -x bin/check-models   # model testing script (ADR-0037)
 test -x bin/mac-vps      # laptop/VPS toggle script (ADR-0042)
 test -L ~/.config/opencode/plugins/herdr-worktree-open.js  # stowed plugin (ADR-0036)
 test -L ~/.config/opencode/model-recommendation/tui.js     # stowed recommendation banner plugin (ADR-0037)
+test -L ~/.claude/statusline.sh  # stowed status line (ADR-0045)
 test ! -L ~/.zshrc       # machine-owned; sources the tracked rc (ADR-0034)
 [[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w opencode' | grep -q 'opencode: function'  # caffeinate wrapper, macOS only (ADR-0039)
 [[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w claude' | grep -q 'claude: function'      # caffeinate wrapper, macOS only (ADR-0043)
