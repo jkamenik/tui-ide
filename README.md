@@ -17,8 +17,8 @@ Toolchain via Homebrew (macOS and Linuxbrew): git, git-lfs, gh, ansible, neovim,
 mosh, herdr, opencode, devcontainer, claude-code, ripgrep, stow, jq,
 lazygit, terraform, go-task.
 
-macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud). iTerm2 is
-installed manually.
+macOS casks: Meslo LGS Nerd Font, Google Cloud CLI (gcloud), CodexBar (agent
+usage limits in the menu bar). iTerm2 is installed manually.
 
 Dotfiles via GNU Stow: zsh, git, nvim, herdr, opencode-agents,
 opencode-plugins, claude-statusline (the Claude Code status line: model, context

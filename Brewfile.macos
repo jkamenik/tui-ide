@@ -14,3 +14,6 @@ cask "font-meslo-lg-nerd-font"
 # (install.sh) and approve it once under System Settings > Notifications.
 cask "gcloud-cli"
 brew "terminal-notifier"
+
+# Menu bar app for tracking agentic coding (Claude, Codex, ...) usage limits.
+cask "codexbar"
