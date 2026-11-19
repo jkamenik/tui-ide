@@ -21,3 +21,8 @@ vim.opt.swapfile = false
 vim.opt.undofile = true
 vim.opt.splitright = true
 vim.opt.splitbelow = true
+-- Terminal buffers (e.g. the claudecode.nvim pane) stay in Terminal mode on focus
+vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter", "FocusGained" }, {
+  pattern = "term://*",
+  callback = function() vim.cmd("startinsert") end,
+})
