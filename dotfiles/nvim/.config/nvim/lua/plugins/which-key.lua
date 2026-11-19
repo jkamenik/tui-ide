@@ -1,4 +1,11 @@
 local spec = {
+  { "<leader>a", group = "claude" },
+  { "<leader>aa", desc = "Accept Claude diff" },
+  { "<leader>ab", desc = "Add buffer to Claude" },
+  { "<leader>ac", desc = "Toggle Claude pane" },
+  { "<leader>ad", desc = "Deny Claude diff" },
+  { "<leader>af", desc = "Focus Claude pane" },
+  { "<leader>as", desc = "Send selection to Claude", mode = "v" },
   { "<leader>e", desc = "Toggle file tree" },
   { "<leader>f", group = "find" },
   { "<leader>fb", desc = "Find buffers" },

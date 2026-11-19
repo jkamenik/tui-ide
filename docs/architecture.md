@@ -66,6 +66,7 @@ flowchart TB
 | Terraform, Ansible, gcloud | Cloud & IaC | Provisioning and config management against GCP |
 | render-markdown.nvim | Markdown renderer | In-buffer Obsidian-style rendering, `obsidian` preset |
 | obsidian.nvim | Vault manager | Wikilinks, quick switch, new notes; UI disabled. Optional: loaded only when the local overlay names a workspace that exists on disk |
+| claudecode.nvim | Claude Code IDE bridge | Serves the IDE protocol so `claude` sees the selection and opens diffs in Neovim; opens `claude` in a side split with `<leader>ac`; `<leader>a` keys ([ADR-0046](adr/0046-add-claudecode-nvim.md)) |
 | mini.map | Minimap | Floating buffer overview on the right, `<leader>vm`; search and diagnostic highlights |
 | `bin/` | Repo helper scripts | Tracked scripts (`git-cleanup`, `git-workspace`, `check-models`, `mac-vps`, ...) put on `$PATH` by `install.sh` through a generated `~/.zshrc.local` overlay ([ADR-0033](adr/0033-repo-scripts-in-bin-on-path.md), [ADR-0037](adr/0037-check-models-tool-and-skill.md), [ADR-0038](adr/0038-remove-merged-worktrees-in-git-cleanup.md), [ADR-0040](adr/0040-create-and-open-worktrees-in-git-workspace.md), [ADR-0042](adr/0042-check-remote-login-in-mac-vps.md)) |
 
