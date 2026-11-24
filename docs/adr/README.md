@@ -55,6 +55,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0044](0044-seed-a-warm-burnout-claude-code-theme.md) | Seed a Warm Burnout custom theme for Claude Code | Accepted | 2026-11-13 |
 | [0045](0045-stow-a-claude-code-status-line.md) | Stow a Claude Code status line for model, context, and usage limits | Accepted | 2026-11-13 |
 | [0046](0046-add-claudecode-nvim.md) | Add claudecode.nvim as the Claude Code IDE bridge | Accepted | 2026-11-19 |
+| [0047](0047-install-toolsmith-and-sync-its-tools-repo.md) | Install toolsmith and sync its tools repo between machines | Accepted | 2026-11-24 |
 
 
 ## Format

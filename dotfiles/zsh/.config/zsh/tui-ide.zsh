@@ -6,6 +6,9 @@
 #
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:$HOME/.local/bin:$PATH
+# Tools the toolsmith Claude Code plugin has built (ADR-0047). Agents run them by
+# absolute path; this is for running them yourself.
+export PATH=$HOME/.local/share/toolsmith/tools/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"

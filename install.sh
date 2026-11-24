@@ -382,6 +382,73 @@ if have herdr; then
   fi
 fi
 
+# toolsmith: a Claude Code plugin whose subagent builds reusable helper tools in
+# a git repo at ~/.local/share/toolsmith/tools (ADR-0047). The plugin is
+# installed from the Prime Radiant marketplace, and the tools repo is a separate
+# clone shared between machines: toolsmith needs it to have its own .git, so it
+# cannot live inside this repo. The fixed toolsmith path is a link to the clone
+# (the location toolsmith documents for keeping the repo elsewhere).
+toolsmith_marketplace="prime-radiant-marketplace"
+if have claude; then
+  if ! claude plugin marketplace list 2>/dev/null | grep -q "$toolsmith_marketplace"; then
+    claude plugin marketplace add prime-radiant-inc/prime-radiant-marketplace >/dev/null 2>&1 ||
+      echo "==> Could not add the $toolsmith_marketplace marketplace; re-run install.sh online" >&2
+  fi
+  if ! claude plugin list 2>/dev/null | grep -q "toolsmith@$toolsmith_marketplace"; then
+    claude plugin install "toolsmith@$toolsmith_marketplace" >/dev/null 2>&1 &&
+      echo "==> Installed the toolsmith Claude Code plugin" ||
+      echo "==> Could not install toolsmith@$toolsmith_marketplace; re-run install.sh" >&2
+  fi
+else
+  echo "==> claude is not installed; skipping the toolsmith plugin. Re-run install.sh after installing it."
+fi
+
+toolsmith_repo_url="${TOOLSMITH_TOOLS_REPO:-https://github.com/jkamenik/toolsmith-tools.git}"
+toolsmith_tools_dir="${TOOLSMITH_TOOLS_DIR:-$HOME/github.com/jkamenik/toolsmith-tools}"
+toolsmith_link="$HOME/.local/share/toolsmith/tools"
+mkdir -p "$HOME/.local/share/toolsmith" "$(dirname "$toolsmith_tools_dir")"
+
+# A real directory at the link path is a repo toolsmith created before this ran.
+# Move it to the clone location (a rename, nothing deleted) so its tools carry
+# over; if a clone is already there, leave both for the user to reconcile.
+if [ -d "$toolsmith_link" ] && [ ! -L "$toolsmith_link" ]; then
+  if [ ! -e "$toolsmith_tools_dir" ]; then
+    mv "$toolsmith_link" "$toolsmith_tools_dir"
+    echo "==> Moved the existing toolsmith tools repo to $toolsmith_tools_dir"
+  else
+    echo "==> $toolsmith_link and $toolsmith_tools_dir both exist; merge them by hand, then re-run" >&2
+  fi
+fi
+
+# Clone, or fast-forward an existing clone. Both are best effort: the remote may
+# not exist yet or the machine may be offline, and neither should stop the
+# bootstrap. With no clone, an empty directory is enough: toolsmith runs
+# `git init` there on first use, and a later run picks up the remote.
+if [ ! -d "$toolsmith_tools_dir/.git" ]; then
+  if [ -z "$(ls -A "$toolsmith_tools_dir" 2>/dev/null)" ]; then
+    if GIT_TERMINAL_PROMPT=0 git clone -q "$toolsmith_repo_url" "$toolsmith_tools_dir" 2>/dev/null; then
+      echo "==> Cloned the toolsmith tools repo to $toolsmith_tools_dir"
+    else
+      mkdir -p "$toolsmith_tools_dir"
+      echo "==> Could not clone $toolsmith_repo_url; toolsmith will start a local repo in"
+      echo "    $toolsmith_tools_dir. Create the remote and push to share tools between machines."
+    fi
+  fi
+elif [ -n "$(git -C "$toolsmith_tools_dir" remote)" ] &&
+  [ -z "$(git -C "$toolsmith_tools_dir" status --porcelain)" ]; then
+  GIT_TERMINAL_PROMPT=0 git -C "$toolsmith_tools_dir" pull -q --ff-only 2>/dev/null &&
+    echo "==> Updated the toolsmith tools repo" ||
+    echo "==> Could not fast-forward $toolsmith_tools_dir; update it by hand" >&2
+fi
+
+if [ -L "$toolsmith_link" ]; then
+  [ "$(readlink "$toolsmith_link")" = "$toolsmith_tools_dir" ] ||
+    echo "==> $toolsmith_link points at $(readlink "$toolsmith_link"); left alone" >&2
+elif [ ! -e "$toolsmith_link" ] && [ -d "$toolsmith_tools_dir" ]; then
+  ln -s "$toolsmith_tools_dir" "$toolsmith_link"
+  echo "==> Linked $toolsmith_link -> $toolsmith_tools_dir"
+fi
+
 if [ "$os" = "Darwin" ]; then
   # Register terminal-notifier's helper app with Notification Center.
   # macOS authorizes notifications per app identity; opening the bundled app

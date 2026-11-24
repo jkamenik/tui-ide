@@ -36,6 +36,14 @@ because the hooks iTerm2 and herdr install there are machine-specific and Claude
 Code has no user-level overlay file (see
 [ADR-0019](docs/adr/0019-merge-claude-user-settings.md)).
 
+The toolsmith Claude Code plugin is installed by `install.sh`, and the repo of
+reusable tools it builds is a separate clone at
+`~/github.com/jkamenik/toolsmith-tools`, linked at
+`~/.local/share/toolsmith/tools`, so tools follow you between machines. Push it
+yourself after new tools are built; create the remote once with
+`gh repo create jkamenik/toolsmith-tools --private`
+([ADR-0047](docs/adr/0047-install-toolsmith-and-sync-its-tools-repo.md)).
+
 iTerm2 preferences are managed directly in the repo at
 `dotfiles/iterm2/.config/iterm2/AppSupport/`; iTerm2's custom preferences folder
 points at that directory.
@@ -320,6 +328,7 @@ test -x bin/mac-vps              # laptop/VPS toggle script (ADR-0042)
 test -L ~/.config/opencode/plugins/herdr-worktree-open.js   # herdr worktree plugin (ADR-0036)
 [[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w opencode' | grep -q 'opencode: function'  # caffeinate wrapper, macOS only (ADR-0039)
 [[ "${OSTYPE}" != darwin* ]] || zsh -ic 'whence -w claude' | grep -q 'claude: function'      # caffeinate wrapper, macOS only (ADR-0043)
+test -L ~/.local/share/toolsmith/tools   # toolsmith tools repo link (ADR-0047)
 ! command -v nono                # retired by ADR-0031
 ! command -v supacode             # removed; the CLI link may need 'sudo rm /usr/local/bin/supacode'
 ```

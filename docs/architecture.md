@@ -150,6 +150,11 @@ flowchart TB
   Claude Code likewise selects a tracked custom theme,
   `custom:warm-burnout-dark`, seeded copy-once into `~/.claude/themes/`
   ([ADR-0044](adr/0044-seed-a-warm-burnout-claude-code-theme.md)).
+- **toolsmith:** `install.sh` installs the toolsmith Claude Code plugin. Its tools
+  repo is a separate git repo cloned to `~/github.com/jkamenik/toolsmith-tools`
+  and linked at `~/.local/share/toolsmith/tools`, so tools built on one machine
+  reach the others by push and re-run; `install.sh` fast-forwards a clean clone
+  ([ADR-0047](adr/0047-install-toolsmith-and-sync-its-tools-repo.md)).
 - **Claude Code status line:** the stowed `~/.claude/statusline.sh` shows the
   model and effort, context use, and the claude.ai 5-hour and 7-day usage
   limits; the settings template points `statusLine` at it
