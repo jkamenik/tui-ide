@@ -1,0 +1,13 @@
+#!/bin/sh
+# Push the toolsmith tools repo after every commit so new tools reach the other
+# machines. install.sh copies this into the clone's .git/hooks/.
+#
+# toolsmith-repo treats a failing commit hook as a failed commit and rolls the
+# tool back, and it reads this process's output, so the push runs detached with
+# every stream redirected and the hook always exits 0. A failed push (offline,
+# rejected because another machine pushed first) is left in the log; the next
+# commit pushes everything that is still unpushed.
+git remote get-url origin >/dev/null 2>&1 || exit 0
+log="$(git rev-parse --absolute-git-dir)/post-commit-push.log"
+(GIT_TERMINAL_PROMPT=0 git push -q -u origin HEAD >"$log" 2>&1 </dev/null &) >/dev/null 2>&1
+exit 0

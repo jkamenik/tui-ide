@@ -153,7 +153,12 @@ flowchart TB
 - **toolsmith:** `install.sh` installs the toolsmith Claude Code plugin. Its tools
   repo is a separate git repo cloned to `~/github.com/jkamenik/toolsmith-tools`
   and linked at `~/.local/share/toolsmith/tools`, so tools built on one machine
-  reach the others by push and re-run; `install.sh` fast-forwards a clean clone
+  reach the others without a manual push: a tracked `post-commit` hook
+  (`dotfiles/toolsmith/post-commit`, installed into the clone by `install.sh`)
+  pushes in the background after each commit, `install.sh` sets repo-local
+  `commit.gpgsign=false` so unattended commits are not blocked by signing, and
+  fast-forwards a
+  clean clone
   ([ADR-0047](adr/0047-install-toolsmith-and-sync-its-tools-repo.md)).
 - **Claude Code status line:** the stowed `~/.claude/statusline.sh` shows the
   model and effort, context use, and the claude.ai 5-hour and 7-day usage

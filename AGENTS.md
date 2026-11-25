@@ -24,6 +24,7 @@ and the developer tools they need. It does not own scheduled execution
 | `dotfiles/opencode/...` | opencode client config templates (`tui.jsonc.example` for 1.x, `cli.json.example` for 2.x), server config template (`opencode.jsonc.example`), plus the tracked `themes/*.json`; tracked but not stowed, `install.sh` copies them when missing ([ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)) |
 | `dotfiles/claude-statusline/...` | Claude Code status line script; portable, so stowed as a link to `~/.claude/statusline.sh` ([ADR-0045](docs/adr/0045-stow-a-claude-code-status-line.md)) |
 | `dotfiles/opencode-agents/...` | opencode global `AGENTS.md`; portable, so stowed as a link rather than seeded from an example ([ADR-0030](docs/adr/0030-stow-the-global-opencode-agents-md.md)) |
+| `dotfiles/toolsmith/post-commit` | Git hook pushing the toolsmith tools repo after each commit; tracked but not stowed, `install.sh` copies it into the clone's `.git/hooks/` ([ADR-0047](docs/adr/0047-install-toolsmith-and-sync-its-tools-repo.md)) |
 | `docs/architecture.md` | System architecture |
 | `docs/adr/` | Architecture decision records and index |
 | `docs/runbooks/` | Gated per-machine try-it procedures, e.g. the opencode 1.x to 2.x upgrade ([ADR-0025](docs/adr/0025-pin-opencode-to-the-1.x-line.md) gate, now landed by [ADR-0032](docs/adr/0032-track-the-opencode-2.x-line.md)) |

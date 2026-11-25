@@ -39,9 +39,11 @@ Code has no user-level overlay file (see
 The toolsmith Claude Code plugin is installed by `install.sh`, and the repo of
 reusable tools it builds is a separate clone at
 `~/github.com/jkamenik/toolsmith-tools`, linked at
-`~/.local/share/toolsmith/tools`, so tools follow you between machines. Push it
-yourself after new tools are built; create the remote once with
-`gh repo create jkamenik/toolsmith-tools --private`
+`~/.local/share/toolsmith/tools`, so tools follow you between machines. A tracked `post-commit` hook
+(`dotfiles/toolsmith/post-commit`, copied into the clone by `install.sh`) pushes
+in the background after every commit toolsmith makes; a failed push is logged
+to the clone's `.git/post-commit-push.log` and retried by the next commit.
+Create the remote once with `gh repo create jkamenik/toolsmith-tools --private`
 ([ADR-0047](docs/adr/0047-install-toolsmith-and-sync-its-tools-repo.md)).
 
 iTerm2 preferences are managed directly in the repo at

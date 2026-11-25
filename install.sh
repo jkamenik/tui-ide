@@ -441,6 +441,27 @@ elif [ -n "$(git -C "$toolsmith_tools_dir" remote)" ] &&
     echo "==> Could not fast-forward $toolsmith_tools_dir; update it by hand" >&2
 fi
 
+# Push after every commit toolsmith makes. .git/hooks is not cloned, so each
+# machine gets the tracked hook here; a different hook already there is backed
+# up first.
+toolsmith_hook_src="$REPO_DIR/dotfiles/toolsmith/post-commit"
+if [ -d "$toolsmith_tools_dir/.git" ]; then
+  # Repo-local only: toolsmith commits unattended, so signing (a prompt or an
+  # unavailable key) makes them fail. The global gpgsign setting is untouched.
+  git -C "$toolsmith_tools_dir" config --local commit.gpgsign false
+  toolsmith_hook="$(git -C "$toolsmith_tools_dir" rev-parse --path-format=absolute --git-path hooks)/post-commit"
+  if ! cmp -s "$toolsmith_hook_src" "$toolsmith_hook"; then
+    mkdir -p "$(dirname "$toolsmith_hook")"
+    if [ -e "$toolsmith_hook" ]; then
+      mkdir -p "$BACKUP_DIR/toolsmith-tools"
+      cp "$toolsmith_hook" "$BACKUP_DIR/toolsmith-tools/post-commit"
+    fi
+    cp "$toolsmith_hook_src" "$toolsmith_hook"
+    chmod +x "$toolsmith_hook"
+    echo "==> Installed the toolsmith tools repo post-commit push hook"
+  fi
+fi
+
 if [ -L "$toolsmith_link" ]; then
   [ "$(readlink "$toolsmith_link")" = "$toolsmith_tools_dir" ] ||
     echo "==> $toolsmith_link points at $(readlink "$toolsmith_link"); left alone" >&2
