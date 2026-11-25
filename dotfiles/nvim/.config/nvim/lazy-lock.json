@@ -1,5 +1,7 @@
 {
+  "blink.download": { "branch": "main", "commit": "fd9a48ebbe6ec30d5dfcc5b42c243941ccdca1aa" },
   "claudecode.nvim": { "branch": "main", "commit": "6ad8e0fdbda84486f13f7f1fa4802942f4877f13" },
+  "kubectl.nvim": { "branch": "main", "commit": "e60cadd8845cced40b9feb1f996faf576a5f6ea8" },
   "lazy.nvim": { "branch": "main", "commit": "306a05526ada86a7b30af95c5cc81ffba93fef97" },
   "lazygit.nvim": { "branch": "main", "commit": "9ffc6103926718f7070fb4017694543cd7dc9718" },
   "mini.map": { "branch": "main", "commit": "7e836e3679387012f84f2a389ace740d57a93a37" },
