@@ -57,6 +57,7 @@ See [Architecture](../architecture.md) for the compiled current state.
 | [0046](0046-add-claudecode-nvim.md) | Add claudecode.nvim as the Claude Code IDE bridge | Accepted | 2026-11-19 |
 | [0047](0047-install-toolsmith-and-sync-its-tools-repo.md) | Install toolsmith and sync its tools repo between machines | Accepted | 2026-11-24 |
 | [0048](0048-add-kubectl-nvim.md) | Add kubectl.nvim as the in-editor Kubernetes browser | Accepted | 2026-11-24 |
+| [0049](0049-stow-global-claude-md-and-a-toolsmith-nudge-hook.md) | Stow the global Claude Code CLAUDE.md and a toolsmith nudge hook | Accepted | 2026-11-25 |
 
 
 ## Format

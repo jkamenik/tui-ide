@@ -6,7 +6,7 @@ set -euo pipefail
 # Physical path: the backup guard below compares against realpath output.
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
-DOTFILES=(nvim herdr git zsh opencode-agents opencode-plugins claude-statusline)
+DOTFILES=(nvim herdr git zsh opencode-agents opencode-plugins claude-statusline claude-md claude-hooks)
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
@@ -246,6 +246,30 @@ elif have jq; then
   echo "==> Merged Claude Code settings from dotfiles/claude (previous in $BACKUP_DIR)"
 else
   echo "==> jq is missing; leaving ~/.claude/settings.json untouched" >&2
+fi
+
+# Register the toolsmith nudge hook (ADR-0049). It cannot live in the settings
+# template above: the merge replaces arrays, so a tracked hooks.PreToolUse would
+# erase the iTerm2 cc-status entry already in that array. Instead append the
+# entry only when it is missing. The script itself is stowed by the claude-hooks
+# package; the command uses ~ so the settings file holds no machine-specific path.
+nudge_cmd='~/.claude/hooks/toolsmith-nudge.sh'
+if [ -L "$claude_settings" ] || [ ! -f "$claude_settings" ]; then
+  : # a link is left alone (ADR-0019); no file means the copy step above failed
+elif ! have jq; then
+  echo "==> jq is missing; not registering the toolsmith nudge hook" >&2
+elif jq -e --arg cmd "$nudge_cmd" \
+  'any(.hooks.PreToolUse[]?.hooks[]?; .command == $cmd)' "$claude_settings" >/dev/null 2>&1; then
+  echo "==> Toolsmith nudge hook already registered"
+else
+  mkdir -p "$BACKUP_DIR/.claude"
+  cp "$claude_settings" "$BACKUP_DIR/.claude/settings.pre-nudge.json"
+  jq --arg cmd "$nudge_cmd" '
+    .hooks //= {} | .hooks.PreToolUse //= []
+    | .hooks.PreToolUse += [{matcher: "Bash|Write", hooks: [{type: "command", command: $cmd}]}]
+  ' "$claude_settings" >"$claude_settings.tmp"
+  mv "$claude_settings.tmp" "$claude_settings"
+  echo "==> Registered the toolsmith nudge hook in ~/.claude/settings.json (previous in $BACKUP_DIR)"
 fi
 
 # Claude Code loads custom themes by filename from ~/.claude/themes/, and the

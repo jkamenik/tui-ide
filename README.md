@@ -23,7 +23,10 @@ usage limits in the menu bar). iTerm2 is installed manually.
 Dotfiles via GNU Stow: zsh, git, nvim, herdr, opencode-agents,
 opencode-plugins, claude-statusline (the Claude Code status line: model, context
 use, and claude.ai usage limits, see
-[ADR-0045](docs/adr/0045-stow-a-claude-code-status-line.md)). The opencode client config is
+[ADR-0045](docs/adr/0045-stow-a-claude-code-status-line.md)), claude-md (the global
+Claude Code `CLAUDE.md`) and claude-hooks (a toolsmith nudge hook that warns, never
+blocks; see [ADR-0049](docs/adr/0049-stow-global-claude-md-and-a-toolsmith-nudge-hook.md)).
+The opencode client config is
 machine-local, so `install.sh` seeds the file the installed opencode version
 reads from a tracked example on a fresh machine instead of linking it (see
 [ADR-0026](docs/adr/0026-seed-the-client-config-the-installed-version-reads.md)).
